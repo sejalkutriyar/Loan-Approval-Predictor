@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+.venv/
+*.pt
+*.pkl
+.ipynb_checkpoints/
+.vscode/
+*.log
+node_modules/
