@@ -6,8 +6,8 @@ sys.path.append(str(Path(__file__).parent))
 from app.models.ann_model import load_production_model
 from app.models.preprocessing import preprocess_applicant
 
-# Ek dummy applicant ka data (poori Home Credit dataset ke columns ke hisaab se
-# — yahan sirf test ke liye kuch sample values de rahe hain)
+# Data for a dummy applicant (based on the columns of the entire Home Credit dataset)
+# — We are providing some sample values ​​here just for testing purposes.
 sample_applicant = {
     "NAME_CONTRACT_TYPE": "Cash loans",
     "CODE_GENDER": "M",

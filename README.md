@@ -5,7 +5,7 @@ AI-assisted decision-support system for loan officers — built with PyTorch, Fa
 ## Project Status
 - ✅ Data preprocessing, baseline ANN training, TabTransformer ablation study complete (see `notebooks/`)
 - ✅ SHAP, DiCE, MC Dropout + Calibration validated
-- ⏳ FastAPI backend + React frontend in progress
+- ✅ FastAPI backend + React frontend in progress
 
 ## Setup
 1. `pip install -r requirements.txt`
