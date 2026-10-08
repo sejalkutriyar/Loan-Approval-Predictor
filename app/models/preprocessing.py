@@ -10,23 +10,34 @@ scaler = joblib.load(MODELS_DIR / "scaler.pkl")
 feature_names = joblib.load(MODELS_DIR / "feature_names.pkl")
 categorical_cols = joblib.load(MODELS_DIR / "categorical_cols.pkl")
 
+_feature_set = set(feature_names)
+_categorical_set = set(categorical_cols)
+
 
 def preprocess_applicant(applicant_data: dict) -> np.ndarray:
     """
-    Takes a single applicant's raw input (as a dict, matching the Pydantic schema)
-    and transforms it into a model-ready, scaled numpy array —
-    using the exact same encoding and scaling fitted during training.
+    Takes a single applicant's raw input (dict matching the Pydantic schema)
+    and returns a model-ready, scaled numpy array.
+
+    One-hot columns are built manually against the training-time feature_names.
+    (pd.get_dummies on a single row is wrong: drop_first=True drops the only
+    category present, so every dummy ended up 0 -> train/serve skew.)
     """
-    df = pd.DataFrame([applicant_data])
+    # Start with every training feature at 0
+    row = {name: 0.0 for name in feature_names}
 
-    # One-hot encode categorical columns (same as training)
-    df_encoded = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
+    for col, value in applicant_data.items():
+        if col in _categorical_set:
+            dummy = f"{col}_{value}"
+            # If this category was the dropped baseline in training, no column
+            # exists and all its dummies correctly stay 0.
+            if dummy in _feature_set:
+                row[dummy] = 1.0
+        elif col in _feature_set:
+            row[col] = float(value)
 
-    # Align columns exactly with training-time feature order.
-    # Any missing dummy column (e.g., a category not present in this single row) gets filled with 0.
-    df_encoded = df_encoded.reindex(columns=feature_names, fill_value=0)
+    # Keep exact training column order
+    df = pd.DataFrame([row], columns=feature_names)
 
     # Scale using the SAME fitted scaler from training (not fit again!)
-    scaled = scaler.transform(df_encoded)
-
-    return scaled
+    return scaler.transform(df)
