@@ -1,17 +1,15 @@
 import time
 import threading
-import torch
 import numpy as np
+import torch
 from app.models.ann_model import load_production_model
 from app.models.preprocessing import preprocess_applicant
 from app.services.uncertainty_service import mc_dropout_predict
 from app.services.calibration_service import calibrate_probability
 from app.services.shap_service import explain_applicant
+from app.services.dice_service import generate_recourse
 
-# Decision thresholds on the CALIBRATED default probability.
-# Chosen from the validation calibration table (see notebook):
-#   p <= 0.10 -> ~72% of applicants, observed default rate ~4.4%
-#   p >  0.20 -> ~8% of applicants,  observed default rate ~27%
+# Decision thresholds on the CALIBRATED default probability (from validation table).
 APPROVE_MAX = 0.10
 REJECT_MIN = 0.20
 UNCERTAINTY_MAX = 0.10   # above this the model is unsure -> human review
@@ -27,21 +25,24 @@ def get_model():
     return _model
 
 
+def _score(applicant_data: dict):
+    """Preprocess + MC Dropout + calibration. Same seeds -> same result every time."""
+    processed = preprocess_applicant(applicant_data)
+    model = get_model()
+    x = torch.FloatTensor(processed)
+
+    torch.manual_seed(42)
+    np.random.seed(42)
+    raw_prob, uncertainty = mc_dropout_predict(model, x, n_passes=50)
+    calibrated_prob = float(calibrate_probability(raw_prob))
+    return processed, model, calibrated_prob, float(uncertainty)
+
+
 def predict_applicant(applicant_data: dict) -> dict:
-    # One request at a time: MC Dropout and SHAP both change the shared
-    # model's mode, so concurrent requests could interfere with each other.
+    # One request at a time: MC Dropout, SHAP and DiCE all use the shared model.
     with _lock:
         t_start = time.perf_counter()
-
-        processed = preprocess_applicant(applicant_data)
-        model = get_model()
-        x = torch.FloatTensor(processed)
-
-        torch.manual_seed(42)
-        np.random.seed(42)
-        raw_prob, uncertainty = mc_dropout_predict(model, x, n_passes=50)
-        calibrated_prob = float(calibrate_probability(raw_prob))
-        uncertainty = float(uncertainty)
+        processed, model, calibrated_prob, uncertainty = _score(applicant_data)
 
         if calibrated_prob <= APPROVE_MAX:
             decision = "Approved"
@@ -72,4 +73,42 @@ def predict_applicant(applicant_data: dict) -> dict:
             "reason_codes": reason_codes,
             "explanation_available": explanation_available,
             "model_version": "ANN-v1",
+        }
+
+
+def recourse_applicant(applicant_data: dict) -> dict:
+    """On-demand DiCE recourse: what minimal changes would reach the Approved zone."""
+    with _lock:
+        t_start = time.perf_counter()
+        processed, model, calibrated_prob, _ = _score(applicant_data)
+
+        if calibrated_prob <= APPROVE_MAX:
+            return {
+                "recourse_needed": False,
+                "default_probability": round(calibrated_prob, 4),
+                "counterfactuals": [],
+                "message": "Applicant is already in the approval zone; no changes needed.",
+            }
+
+        counterfactuals, message = [], ""
+        try:
+            counterfactuals = generate_recourse(
+                model, applicant_data, processed, APPROVE_MAX
+            )
+            message = (
+                f"{len(counterfactuals)} suggestion(s) found."
+                if counterfactuals else
+                "No feasible change within the allowed limits; manual review recommended."
+            )
+        except Exception as e:
+            print(f"[warning] DiCE failed: {e}")
+            message = "Recourse could not be computed for this applicant."
+
+        print(f"[timing] total recourse took {(time.perf_counter() - t_start) * 1000:.0f} ms")
+
+        return {
+            "recourse_needed": True,
+            "default_probability": round(calibrated_prob, 4),
+            "counterfactuals": counterfactuals,
+            "message": message,
         }
