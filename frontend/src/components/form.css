@@ -1,0 +1,193 @@
+/* =========================================================
+   form.css — Form component styles
+   ========================================================= */
+
+/* ── Section Wrapper Cards ──────────────────────────────── */
+.form-section {
+  @apply rounded-2xl border border-slate-800/90 bg-slate-900/60 p-4 shadow-sm backdrop-blur;
+}
+
+/* ── Section Header ─────────────────────────────────────── */
+.form-section-header {
+  @apply flex items-center gap-2.5 pb-2 mb-3 border-b border-slate-700/60;
+}
+
+.form-section-header__icon-wrap {
+  @apply p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20;
+}
+
+.form-section-header__title {
+  @apply text-xs font-bold uppercase tracking-wider text-slate-200;
+}
+
+.form-section-header__subtitle {
+  @apply text-[11px] text-slate-400;
+}
+
+/* ── Form Grid ──────────────────────────────────────────── */
+.form-grid-3 {
+  @apply grid grid-cols-1 gap-4 sm:grid-cols-3;
+}
+
+.form-grid-2 {
+  @apply grid grid-cols-1 gap-4 sm:grid-cols-2;
+}
+
+/* ── Generic Input Label Row ────────────────────────────── */
+.form-label-row {
+  @apply flex items-center justify-between mb-1;
+}
+
+.form-label {
+  @apply text-xs font-medium text-slate-300;
+}
+
+.form-label-hint {
+  @apply text-[10px] text-slate-400;
+}
+
+/* ── Money Input ────────────────────────────────────────── */
+.money-input__lakh-badge {
+  @apply text-[10px] font-mono text-indigo-400 font-semibold bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-800/40;
+}
+
+.money-input__wrap {
+  @apply relative rounded-xl shadow-sm;
+}
+
+.money-input__prefix {
+  @apply pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3;
+}
+
+.money-input__currency {
+  @apply text-sm font-semibold text-slate-400;
+}
+
+.money-input__field {
+  @apply block w-full rounded-xl border border-slate-700/80 bg-slate-900/90 py-2.5 pl-8 pr-3 text-sm font-mono text-slate-100 placeholder-slate-600 transition-all focus:border-indigo-500 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30;
+}
+
+/* ── Text / Number Inputs ───────────────────────────────── */
+.form-input {
+  @apply block w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm font-mono text-slate-100 transition-all focus:border-indigo-500 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30;
+}
+
+.form-input--suffix-wrap {
+  @apply relative rounded-xl shadow-sm;
+}
+
+.form-input--suffix {
+  @apply pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3;
+}
+
+.form-input--suffix-text {
+  @apply text-xs font-semibold text-slate-400;
+}
+
+/* ── Select Dropdown ────────────────────────────────────── */
+.form-select {
+  @apply block w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-sm text-slate-100 transition-all focus:border-indigo-500 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30;
+}
+
+.form-select--sm {
+  @apply block w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-2.5 text-xs text-slate-100 transition-all focus:border-indigo-500 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30;
+}
+
+/* ── EXT_SOURCE Credit Score Card ───────────────────────── */
+.ext-score-card {
+  @apply rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 flex flex-col justify-between;
+}
+
+.ext-score-card__header {
+  @apply flex items-center justify-between mb-1.5;
+}
+
+.ext-score-card__name {
+  @apply text-xs font-semibold text-slate-200;
+}
+
+.ext-score-card__source {
+  @apply text-[10px] text-slate-500 mb-2.5;
+}
+
+.ext-score-card__range-row {
+  @apply flex items-center gap-3;
+}
+
+.ext-score-card__range {
+  @apply w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500;
+}
+
+.ext-score-card__value-box {
+  @apply min-w-[48px] px-2 py-1 rounded bg-slate-800/80 border border-slate-700/60 text-right;
+}
+
+.ext-score-card__value {
+  @apply font-mono text-sm font-bold text-indigo-300;
+}
+
+.ext-score-card__scale {
+  @apply flex justify-between text-[9px] text-slate-600 mt-1 font-mono;
+}
+
+/* ── Background Data Annex (Expandable) ─────────────────── */
+.annex-section {
+  @apply rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden transition-all;
+}
+
+.annex-toggle {
+  @apply flex w-full items-center justify-between px-4 py-3 text-xs font-semibold text-slate-300 hover:bg-slate-800/40 transition-colors;
+}
+
+.annex-toggle__label {
+  @apply flex items-center gap-2;
+}
+
+.annex-toggle__meta {
+  @apply text-[10px] text-slate-400 font-normal ml-1;
+}
+
+.annex-toggle__action {
+  @apply flex items-center gap-1.5 text-slate-400;
+}
+
+.annex-toggle__action-text {
+  @apply text-[11px] font-mono;
+}
+
+.annex-body {
+  @apply border-t border-slate-800 p-4 space-y-3 bg-slate-950/60;
+}
+
+.annex-search-wrap {
+  @apply relative;
+}
+
+.annex-search {
+  @apply w-full rounded-lg border border-slate-800 bg-slate-900/90 py-1.5 pl-8 pr-3 text-xs text-slate-200 placeholder-slate-600 focus:border-indigo-500 focus:outline-none;
+}
+
+.annex-fields-grid {
+  @apply max-h-60 overflow-y-auto pr-1 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.annex-field-card {
+  @apply rounded-lg border border-slate-800/70 bg-slate-900/50 p-2 text-xs;
+}
+
+.annex-field-label {
+  @apply block text-[10px] font-medium text-slate-400 truncate mb-1;
+}
+
+.annex-field-input {
+  @apply w-full rounded bg-slate-950 border border-slate-800 px-2 py-1 text-xs font-mono text-slate-200 focus:border-indigo-500 focus:outline-none;
+}
+
+.annex-field-text {
+  @apply w-full rounded bg-slate-950 border border-slate-800 px-2 py-1 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none;
+}
+
+/* ── Primary Submit CTA Button ──────────────────────────── */
+.btn-submit {
+  @apply relative flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 hover:brightness-110 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none;
+}

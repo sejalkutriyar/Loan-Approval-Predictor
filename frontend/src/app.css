@@ -1,0 +1,200 @@
+/* =========================================================
+   app.css — Layout, Header, Footer & Preset Switcher styles
+   ========================================================= */
+
+/* ── Root Shell ─────────────────────────────────────────── */
+.app-shell {
+  @apply min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans;
+}
+
+/* ── Top Navigation Bar ─────────────────────────────────── */
+.app-header {
+  @apply sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md px-4 lg:px-8 py-3;
+}
+
+.app-header__inner {
+  @apply mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4;
+}
+
+.app-header__logo-wrap {
+  @apply h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 p-0.5 shadow-lg shadow-indigo-500/20;
+}
+
+.app-header__logo-inner {
+  @apply h-full w-full rounded-[10px] bg-slate-950 flex items-center justify-center;
+}
+
+.app-header__brand-name {
+  @apply text-base font-extrabold tracking-tight text-white font-mono;
+}
+
+.app-header__enterprise-badge {
+  @apply text-indigo-400 font-sans font-semibold text-xs tracking-normal px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20;
+}
+
+.app-header__subtitle {
+  @apply text-[11px] text-slate-400 font-medium;
+}
+
+.app-header__telemetry {
+  @apply hidden sm:flex items-center gap-3 text-xs;
+}
+
+.badge-connected {
+  @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[11px];
+}
+
+.badge-connected__dot {
+  @apply w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse;
+}
+
+.badge-pill {
+  @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 font-mono text-[11px];
+}
+
+/* ── Main Content Area ──────────────────────────────────── */
+.app-main {
+  @apply mx-auto max-w-7xl w-full px-4 lg:px-8 py-6 flex-1 space-y-6;
+}
+
+/* ── Preset Profile Switcher Section ────────────────────── */
+.preset-section {
+  @apply rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-sm backdrop-blur;
+}
+
+.preset-section__header {
+  @apply flex items-center justify-between gap-2 mb-3;
+}
+
+.preset-section__title {
+  @apply text-xs font-bold uppercase tracking-wider text-slate-200;
+}
+
+.preset-section__subtitle {
+  @apply text-[11px] text-slate-400 font-mono hidden sm:inline;
+}
+
+.preset-grid {
+  @apply grid grid-cols-1 gap-3 sm:grid-cols-3;
+}
+
+.preset-card {
+  @apply relative text-left rounded-xl border p-3.5 transition-all border-slate-800 bg-slate-950/40 hover:border-slate-700 hover:bg-slate-900/40;
+}
+
+.preset-card--active {
+  @apply border-indigo-500 bg-gradient-to-br from-indigo-950/70 via-slate-900 to-slate-900 ring-1 ring-indigo-500;
+}
+
+.preset-card__header {
+  @apply flex items-center justify-between mb-1.5;
+}
+
+.preset-card__label {
+  @apply text-xs font-bold text-slate-200 flex items-center gap-1.5;
+}
+
+.preset-card__dot--prime {
+  @apply w-2 h-2 rounded-full bg-emerald-400;
+}
+
+.preset-card__dot--borderline {
+  @apply w-2 h-2 rounded-full bg-amber-400;
+}
+
+.preset-card__dot--high-risk {
+  @apply w-2 h-2 rounded-full bg-rose-400;
+}
+
+.preset-card__hint--prime {
+  @apply text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border text-emerald-400 bg-emerald-500/10 border-emerald-500/20;
+}
+
+.preset-card__hint--borderline {
+  @apply text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border text-amber-400 bg-amber-500/10 border-amber-500/20;
+}
+
+.preset-card__hint--high-risk {
+  @apply text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border text-rose-400 bg-rose-500/10 border-rose-500/20;
+}
+
+.preset-card__desc {
+  @apply text-[11px] text-slate-400 leading-tight;
+}
+
+/* ── Dashboard Two-Column Grid ──────────────────────────── */
+.dashboard-grid {
+  @apply grid grid-cols-1 gap-6 lg:grid-cols-12 items-start;
+}
+
+.dashboard-left {
+  @apply lg:col-span-7 space-y-4;
+}
+
+.dashboard-right {
+  @apply lg:col-span-5 space-y-4 lg:sticky lg:top-20;
+}
+
+/* ── Form Panel Wrapper ─────────────────────────────────── */
+.form-panel {
+  @apply rounded-2xl border border-slate-800 bg-slate-900/40 p-5 shadow-sm backdrop-blur;
+}
+
+.form-panel__header {
+  @apply flex items-center justify-between pb-3 mb-4 border-b border-slate-800;
+}
+
+.form-panel__title {
+  @apply text-sm font-bold text-slate-100 flex items-center gap-2;
+}
+
+.form-panel__subtitle {
+  @apply text-xs text-slate-400;
+}
+
+.form-panel__profile-badge {
+  @apply text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700;
+}
+
+/* ── Inference Error Banner ─────────────────────────────── */
+.error-banner {
+  @apply rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-300 flex items-start gap-3 backdrop-blur;
+}
+
+.error-banner__title {
+  @apply font-bold mb-0.5;
+}
+
+/* ── Standby / Empty State Panel ────────────────────────── */
+.standby-panel {
+  @apply rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur space-y-5 text-center;
+}
+
+.standby-panel__icon {
+  @apply mx-auto w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400;
+}
+
+.standby-panel__title {
+  @apply text-sm font-bold text-slate-200;
+}
+
+.standby-panel__subtitle {
+  @apply text-xs text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed;
+}
+
+.pipeline-checklist {
+  @apply text-left rounded-xl border border-slate-800/80 bg-slate-950/60 p-3.5 space-y-2 text-xs font-mono text-slate-300;
+}
+
+.pipeline-checklist__item {
+  @apply flex items-center gap-2 text-slate-300;
+}
+
+.pipeline-checklist__footer {
+  @apply pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+.app-footer {
+  @apply border-t border-slate-800/60 bg-slate-950 py-4 px-4 text-center text-xs text-slate-400 font-mono;
+}

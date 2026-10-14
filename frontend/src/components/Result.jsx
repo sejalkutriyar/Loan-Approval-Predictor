@@ -1,91 +1,260 @@
 import React from "react";
-import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ShieldCheck,
+  TrendingDown,
+  TrendingUp,
+  HelpCircle,
+  Cpu,
+} from "lucide-react";
 import { label, pct } from "../fields.js";
+import "./result.css";
 
-const STYLE = {
-  "Approved": { cls: "bg-emerald-100 text-emerald-800 border-emerald-300", Icon: CheckCircle2 },
-  "Rejected": { cls: "bg-rose-100 text-rose-800 border-rose-300", Icon: XCircle },
-  "Needs Manual Review": { cls: "bg-amber-100 text-amber-800 border-amber-300", Icon: AlertTriangle },
+const DECISION_CONFIG = {
+  Approved: {
+    title: "APPROVED FOR DISBURSAL",
+    subtitle: "Low calibrated default probability meets institutional risk criteria.",
+    bannerClass: "verdict-banner verdict-banner--approved",
+    ratingClass: "verdict-banner__rating--prime",
+    icon: CheckCircle2,
+    rating: "TIER A • LOW RISK",
+  },
+  Rejected: {
+    title: "APPLICATION DECLINED",
+    subtitle: "High probability of credit default exceeds standard risk tolerance.",
+    bannerClass: "verdict-banner verdict-banner--rejected",
+    ratingClass: "verdict-banner__rating--rejected",
+    icon: XCircle,
+    rating: "TIER C • SUBPRIME / HIGH RISK",
+  },
+  "Needs Manual Review": {
+    title: "REFERRED TO CREDIT COMMITTEE",
+    subtitle: "Borderline default risk requires human underwriter manual review.",
+    bannerClass: "verdict-banner verdict-banner--review",
+    ratingClass: "verdict-banner__rating--review",
+    icon: AlertTriangle,
+    rating: "TIER B • BORDERLINE / MANUAL AUDIT",
+  },
 };
 
-function Metric({ title, value, sub }) {
+function ExecutiveMetric({ title, value, sub, icon: Icon, badge }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="text-xs text-slate-500">{title}</div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
-      {sub && <div className="mt-1 text-[11px] text-slate-400">{sub}</div>}
+    <div className="metric-card">
+      <div>
+        <div className="metric-card__header">
+          <span className="metric-card__title">{title}</span>
+          {Icon && <Icon size={15} className="text-slate-500" />}
+        </div>
+        <div className="metric-card__value">{value}</div>
+      </div>
+      {(sub || badge) && (
+        <div className="metric-card__footer">
+          <span className="metric-card__sub">{sub}</span>
+          {badge && <span className="metric-card__badge">{badge}</span>}
+        </div>
+      )}
     </div>
   );
 }
 
-// Risk meter scale 0 to 0.40. Zones: approve <= 0.10, review 0.10-0.20, reject > 0.20.
-function RiskMeter({ p }) {
+function CalibratedRiskMeter({ p }) {
   const MAX = 0.4;
-  const pos = Math.min(p, MAX) / MAX * 100;
+  const clampedP = Math.min(Math.max(p, 0), MAX);
+  const positionPercent = (clampedP / MAX) * 100;
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="mb-2 text-xs text-slate-500">Default probability on the decision scale</div>
-      <div className="relative h-3 overflow-hidden rounded-full">
-        <div className="absolute inset-y-0 left-0 bg-emerald-400" style={{ width: "25%" }} />
-        <div className="absolute inset-y-0 bg-amber-400" style={{ left: "25%", width: "25%" }} />
-        <div className="absolute inset-y-0 bg-rose-400" style={{ left: "50%", width: "50%" }} />
+    <div className="risk-meter">
+      <div className="risk-meter__header">
+        <div>
+          <h4 className="risk-meter__title">Calibrated Risk Spectrum</h4>
+          <p className="risk-meter__subtitle">
+            Platt-scaled empirical default probability vs decision thresholds
+          </p>
+        </div>
+        <span className="risk-meter__value-badge">
+          p = {(p * 100).toFixed(2)}%
+        </span>
       </div>
-      <div className="relative mt-1 h-5">
-        <div className="absolute -top-4 h-5 w-0.5 bg-slate-900" style={{ left: `${pos}%` }} />
+
+      {/* Meter Bar */}
+      <div className="risk-meter__track-wrap">
+        {/* Track with 3 Zones */}
+        <div className="risk-meter__track">
+          {/* Zone 1: 0% to 10% (Approve) = 25% of 40% bar */}
+          <div
+            className="risk-meter__zone--approve"
+            style={{ width: "25%" }}
+            title="Approve Zone (≤ 10%)"
+          />
+          {/* Zone 2: 10% to 20% (Review) = 25% of 40% bar */}
+          <div
+            className="risk-meter__zone--review"
+            style={{ width: "25%" }}
+            title="Manual Review Zone (10% - 20%)"
+          />
+          {/* Zone 3: 20% to 40%+ (Reject) = 50% of 40% bar */}
+          <div
+            className="risk-meter__zone--reject"
+            style={{ width: "50%" }}
+            title="Decline Zone (> 20%)"
+          />
+        </div>
+
+        {/* Current Applicant Needle Pointer */}
+        <div
+          className="risk-meter__needle"
+          style={{ left: `${positionPercent}%` }}
+        >
+          <div className="risk-meter__needle-bar" />
+          <div className="risk-meter__needle-tip" />
+        </div>
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500">
-        <span>0%</span><span>Approve ≤ 10%</span><span>Reject &gt; 20%</span><span>40%+</span>
+
+      {/* Zone Threshold Indicators */}
+      <div className="risk-meter__legend">
+        <div className="risk-meter__legend--approve">
+          <span className="font-bold">0% - 10%</span> (Approved)
+        </div>
+        <div className="risk-meter__legend--review">
+          <span className="font-bold">10% - 20%</span> (Review)
+        </div>
+        <div className="risk-meter__legend--reject">
+          <span className="font-bold">&gt; 20%</span> (Decline)
+        </div>
       </div>
     </div>
   );
 }
 
-function Reasons({ codes }) {
+function ShapAttributionList({ codes }) {
   if (!codes?.length) return null;
-  const maxImpact = Math.max(...codes.map((c) => Math.abs(c.impact)), 0.0001);
+  const maxImpact = Math.max(...codes.map((c) => Math.abs(c.impact)), 0.001);
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="mb-3 text-sm font-semibold">Why this decision (SHAP reason codes)</div>
-      <ul className="space-y-2">
+    <div className="shap-list">
+      <div className="shap-list__header">
+        <div>
+          <h4 className="shap-list__title">SHAP Reason Codes (Explainability)</h4>
+          <p className="shap-list__subtitle">
+            Top factors influencing model default-risk logits (Protected attributes excluded)
+          </p>
+        </div>
+        <span className="shap-list__engine-badge">KernelExplainer</span>
+      </div>
+
+      <div className="shap-list__items">
         {codes.map((c, i) => {
-          const up = String(c.direction).includes("increase");
+          const isRiskRaiser = String(c.direction).includes("increase");
+          const impactPercent = ((Math.abs(c.impact) / maxImpact) * 100).toFixed(0);
+
           return (
-            <li key={i} className="flex items-center gap-3 text-sm">
-              <span className="w-56 shrink-0 truncate" title={c.factor}>{label(c.factor)}</span>
-              <div className="h-2.5 flex-1 rounded-full bg-slate-100">
-                <div className={`h-2.5 rounded-full ${up ? "bg-rose-500" : "bg-emerald-500"}`}
-                  style={{ width: `${(Math.abs(c.impact) / maxImpact) * 100}%` }} />
+            <div key={i} className="shap-item">
+              <div className="shap-item__row">
+                <span className="shap-item__factor" title={c.factor}>
+                  {label(c.factor)}
+                </span>
+                <div className="flex items-center gap-1.5 font-mono">
+                  <span className={isRiskRaiser ? "shap-item__badge--raises" : "shap-item__badge--lowers"}>
+                    {isRiskRaiser ? (
+                      <>
+                        <TrendingUp size={11} /> +{(c.impact * 100).toFixed(1)}% (Raises Risk)
+                      </>
+                    ) : (
+                      <>
+                        <TrendingDown size={11} /> {(c.impact * 100).toFixed(1)}% (Lowers Risk)
+                      </>
+                    )}
+                  </span>
+                </div>
               </div>
-              <span className={`w-28 text-right text-xs ${up ? "text-rose-600" : "text-emerald-600"}`}>
-                {up ? "raises risk" : "lowers risk"}
-              </span>
-            </li>
+
+              {/* Relative Impact Progress Bar */}
+              <div className="shap-item__bar-track">
+                <div
+                  className={isRiskRaiser ? "shap-item__bar--raises" : "shap-item__bar--lowers"}
+                  style={{ width: `${Math.max(Number(impactPercent), 5)}%` }}
+                />
+              </div>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }
 
 export default function Result({ result }) {
-  const s = STYLE[result.decision] || STYLE["Needs Manual Review"];
+  const cfg =
+    DECISION_CONFIG[result.decision] || DECISION_CONFIG["Needs Manual Review"];
+  const Icon = cfg.icon;
+
   return (
-    <div className="space-y-4">
-      <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${s.cls}`}>
-        <s.Icon size={22} />
-        <div>
-          <div className="text-lg font-semibold">{result.decision}</div>
-          <div className="text-xs opacity-80">model {result.model_version}</div>
+    <div className="result-root">
+      {/* 1. Executive Verdict Banner */}
+      <div className={cfg.bannerClass}>
+        <div className="verdict-banner__icon-wrap">
+          <Icon size={28} />
+        </div>
+        <div className="verdict-banner__body">
+          <div className="verdict-banner__header-row">
+            <h3 className="verdict-banner__title">{cfg.title}</h3>
+            <span className={cfg.ratingClass}>{cfg.rating}</span>
+          </div>
+          <p className="verdict-banner__subtitle">{cfg.subtitle}</p>
+          <div className="verdict-banner__meta-row">
+            <span className="flex items-center gap-1">
+              <Cpu size={12} /> Model: <b>{result.model_version}</b>
+            </span>
+            <span>•</span>
+            <span>Calibrated Platt Scaling Engine</span>
+          </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Metric title="Default probability (calibrated)" value={pct(result.default_probability)} />
-        <Metric title="Confidence (1 − p)" value={pct(result.confidence_score)} />
-        <Metric title="Uncertainty (MC Dropout σ)" value={result.uncertainty_score.toFixed(3)}
-          sub={result.uncertainty_score > 0.1 ? "above 0.10, forces manual review" : "within limit"} />
+
+      {/* 2. Key Underwriting Metrics (3 Cards) */}
+      <div className="metrics-grid">
+        <ExecutiveMetric
+          title="Calibrated Default Risk (p)"
+          value={pct(result.default_probability)}
+          sub={
+            result.default_probability <= 0.1
+              ? "Underwriting zone ≤ 10%"
+              : result.default_probability <= 0.2
+              ? "Borderline zone 10-20%"
+              : "High default zone > 20%"
+          }
+          icon={TrendingUp}
+          badge="Platt Scaled"
+        />
+
+        <ExecutiveMetric
+          title="Underwriting Confidence (1-p)"
+          value={pct(result.confidence_score)}
+          sub="Reimbursement probability"
+          icon={ShieldCheck}
+          badge="Inverted P"
+        />
+
+        <ExecutiveMetric
+          title="Epistemic Uncertainty (σ)"
+          value={result.uncertainty_score.toFixed(4)}
+          sub={
+            result.uncertainty_score > 0.1
+              ? "High variance forces review"
+              : "Within safe bound (≤0.10)"
+          }
+          icon={HelpCircle}
+          badge="50 MC Passes"
+        />
       </div>
-      <RiskMeter p={result.default_probability} />
-      <Reasons codes={result.reason_codes} />
+
+      {/* 3. Risk Spectrum Gauge */}
+      <CalibratedRiskMeter p={result.default_probability} />
+
+      {/* 4. SHAP Reason Codes */}
+      <ShapAttributionList codes={result.reason_codes} />
     </div>
   );
 }

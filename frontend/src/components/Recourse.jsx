@@ -1,47 +1,125 @@
 import React from "react";
-import { Lightbulb, ArrowRight } from "lucide-react";
+import {
+  Lightbulb,
+  ArrowRight,
+  Sparkles,
+  CheckCircle,
+  TrendingDown,
+  RefreshCw,
+} from "lucide-react";
 import { label, fmtValue, pct } from "../fields.js";
+import "./recourse.css";
 
-export default function Recourse({ decision, data, loading, error, onRun, onApply }) {
+export default function Recourse({
+  decision,
+  data,
+  loading,
+  error,
+  onRun,
+  onApply,
+}) {
   if (decision === "Approved") return null;
+
   return (
-    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-indigo-900">
-          <Lightbulb size={18} /> What would change this decision?
+    <div className="recourse-panel">
+      <div className="recourse-panel__header">
+        <div className="flex items-center gap-2.5">
+          <div className="recourse-panel__icon-wrap">
+            <Lightbulb size={18} />
+          </div>
+          <div>
+            <h4 className="recourse-panel__title">
+              Counterfactual Recourse Studio (DiCE Engine)
+            </h4>
+            <p className="recourse-panel__subtitle">
+              Algorithmic recommendations to safely shift this applicant into the Approval Zone (p ≤ 9%)
+            </p>
+          </div>
         </div>
-        <button onClick={onRun} disabled={loading}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-          {loading ? "Searching (~1s)..." : data ? "Run again" : "Show suggestions"}
+
+        <button
+          onClick={onRun}
+          disabled={loading}
+          className="btn-recourse"
+        >
+          {loading ? (
+            <>
+              <RefreshCw size={13} className="animate-spin" />
+              <span>Optimizing via DiCE (~600ms)...</span>
+            </>
+          ) : data ? (
+            <>
+              <RefreshCw size={13} />
+              <span>Re-run Optimization</span>
+            </>
+          ) : (
+            <>
+              <Sparkles size={13} />
+              <span>Compute Recourse Strategies</span>
+            </>
+          )}
         </button>
       </div>
-      {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
+
+      {error && <div className="recourse-error">{error}</div>}
+
       {data && (
-        <div className="mt-3 space-y-3">
-          <p className="text-xs text-indigo-800">{data.message} Each option is an <b>alternative</b>: apply one of them, not all.</p>
-          {data.counterfactuals.map((cf, i) => (
-            <div key={i} className="rounded-lg border border-indigo-200 bg-white p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-600">Option {i + 1}</span>
-                <span className="text-xs text-emerald-700">new default probability ≈ {pct(cf.new_default_probability)}</span>
+        <div className="recourse-results">
+          <div className="recourse-message-bar">
+            <span>{data.message}</span>
+            <span className="recourse-message-bar__action">
+              Apply 1 alternative pathway
+            </span>
+          </div>
+
+          <div className="strategy-grid">
+            {data.counterfactuals.map((cf, i) => (
+              <div key={i} className="strategy-card">
+                <div>
+                  <div className="strategy-card__header">
+                    <span className="strategy-card__number">
+                      <span className="strategy-card__number-badge">{i + 1}</span>
+                      Strategy Alternative {i + 1}
+                    </span>
+                    <span className="strategy-card__new-risk">
+                      <TrendingDown size={11} /> New Default Risk: {pct(cf.new_default_probability)}
+                    </span>
+                  </div>
+
+                  <div className="strategy-changes">
+                    {cf.changes.map((c, j) => (
+                      <div key={j} className="strategy-change-row">
+                        <span className="strategy-change-row__feature">
+                          {label(c.feature)}
+                        </span>
+                        <div className="strategy-change-row__values">
+                          <span className="strategy-change-row__old">
+                            {fmtValue(c.feature, c.current)}
+                          </span>
+                          <ArrowRight size={12} className="text-slate-600" />
+                          <span className="strategy-change-row__new">
+                            {fmtValue(c.feature, c.suggested)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => onApply(cf)}
+                  className="btn-apply-strategy"
+                >
+                  <CheckCircle size={14} />
+                  <span>Apply Strategy To Form &amp; Re-Underwrite</span>
+                </button>
               </div>
-              <ul className="space-y-1 text-sm">
-                {cf.changes.map((c, j) => (
-                  <li key={j} className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{label(c.feature)}:</span>
-                    <span className="text-slate-500">{fmtValue(c.feature, c.current)}</span>
-                    <ArrowRight size={14} className="text-slate-400" />
-                    <span className="font-semibold text-indigo-700">{fmtValue(c.feature, c.suggested)}</span>
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => onApply(cf)}
-                className="mt-3 rounded-md border border-indigo-300 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
-                Apply to form and re-evaluate
-              </button>
-            </div>
-          ))}
-          <p className="text-[11px] text-slate-500">External credit scores come from bureaus, so improving them is a longer-term action. Suggestions are model-based, not causal guarantees.</p>
+            ))}
+          </div>
+
+          <p className="recourse-disclaimer">
+            * Note: Reductions in loan amount take immediate effect upon approval restructuring. Credit bureau enhancements represent actionable medium-term financial rehabilitation pathways.
+          </p>
         </div>
       )}
     </div>

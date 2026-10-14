@@ -1,0 +1,114 @@
+/* =========================================================
+   recourse.css — Counterfactual Recourse component styles
+   (DiCE Engine panel, strategy cards, apply button)
+   ========================================================= */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Recourse Panel ─────────────────────────────────────── */
+.recourse-panel {
+  @apply rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/40 via-slate-900/60 to-slate-900/90 p-4 backdrop-blur;
+}
+
+.recourse-panel__header {
+  @apply flex items-center justify-between gap-3 flex-wrap border-b border-indigo-500/20 pb-3;
+}
+
+.recourse-panel__icon-wrap {
+  @apply p-2 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400;
+}
+
+.recourse-panel__title {
+  @apply text-xs font-bold uppercase tracking-wider text-indigo-200;
+}
+
+.recourse-panel__subtitle {
+  @apply text-[11px] text-slate-400;
+}
+
+/* ── Run / Re-run Button ────────────────────────────────── */
+.btn-recourse {
+  @apply flex items-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-500 active:scale-95 transition-all disabled:opacity-50;
+}
+
+/* ── Error Notice ───────────────────────────────────────── */
+.recourse-error {
+  @apply mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400;
+}
+
+/* ── Results Container ──────────────────────────────────── */
+.recourse-results {
+  @apply mt-3.5 space-y-3;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.recourse-message-bar {
+  @apply flex items-center justify-between text-xs text-indigo-300 bg-indigo-950/70 border border-indigo-500/20 px-3 py-2 rounded-xl;
+}
+
+.recourse-message-bar__action {
+  @apply text-[10px] text-indigo-400 font-mono;
+}
+
+/* ── Strategy Cards Grid ────────────────────────────────── */
+.strategy-grid {
+  @apply grid grid-cols-1 gap-3;
+}
+
+.strategy-card {
+  @apply rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-3 hover:border-indigo-500/40 transition-colors;
+}
+
+.strategy-card__header {
+  @apply flex items-center justify-between mb-2;
+}
+
+.strategy-card__number {
+  @apply text-xs font-bold text-slate-200 flex items-center gap-1.5;
+}
+
+.strategy-card__number-badge {
+  @apply w-5 h-5 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-[11px] flex items-center justify-center font-mono;
+}
+
+.strategy-card__new-risk {
+  @apply text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1;
+}
+
+/* ── Change Rows inside a strategy ─────────────────────── */
+.strategy-changes {
+  @apply space-y-1.5 py-1;
+}
+
+.strategy-change-row {
+  @apply flex items-center justify-between gap-2 text-xs bg-slate-900/80 rounded-lg px-2.5 py-1.5 border border-slate-800/80;
+}
+
+.strategy-change-row__feature {
+  @apply text-slate-400 font-medium truncate;
+}
+
+.strategy-change-row__values {
+  @apply flex items-center gap-2 font-mono shrink-0;
+}
+
+.strategy-change-row__old {
+  @apply text-slate-500 line-through;
+}
+
+.strategy-change-row__new {
+  @apply font-bold text-indigo-300 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-700/50;
+}
+
+/* ── Apply Strategy Button ──────────────────────────────── */
+.btn-apply-strategy {
+  @apply w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 px-3 py-2 text-xs font-bold text-emerald-300 transition-all hover:scale-[1.01] active:scale-[0.99];
+}
+
+/* ── Disclaimer Note ────────────────────────────────────── */
+.recourse-disclaimer {
+  @apply text-[10px] text-slate-500 leading-relaxed italic;
+}

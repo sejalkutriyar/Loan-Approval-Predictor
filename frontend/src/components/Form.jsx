@@ -1,124 +1,400 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { PRIMARY_KEYS, INCOME_TYPES, EDUCATION_TYPES, HOUSING_TYPES, label } from "../fields.js";
+import {
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+  Briefcase,
+  Activity,
+  UserCheck,
+  FileSpreadsheet,
+  Search,
+  Sparkles,
+} from "lucide-react";
+import {
+  PRIMARY_KEYS,
+  INCOME_TYPES,
+  EDUCATION_TYPES,
+  HOUSING_TYPES,
+  label,
+  inrLakhWords,
+  getCreditScoreTier,
+} from "../fields.js";
+import "./form.css";
 
-const inputCls = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200";
-
-function Field({ name, children, hint }) {
+function FormSectionHeader({ icon: Icon, title, subtitle }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-600">{name}</span>
-      {children}
-      {hint && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
-    </label>
+    <div className="form-section-header">
+      <div className="form-section-header__icon-wrap">
+        <Icon size={16} />
+      </div>
+      <div>
+        <h3 className="form-section-header__title">{title}</h3>
+        {subtitle && (
+          <p className="form-section-header__subtitle">{subtitle}</p>
+        )}
+      </div>
+    </div>
   );
 }
 
-function Num({ value, onChange, step = "any", min, max }) {
+function MoneyInput({ labelText, value, onChange, placeholder = "0" }) {
+  const lakhText = inrLakhWords(value);
   return (
-    <input
-      className={inputCls} type="number" step={step} min={min} max={max}
-      value={Number.isFinite(value) ? value : ""}
-      onChange={(e) => onChange(e.target.value === "" ? NaN : Number(e.target.value))}
-    />
-  );
-}
-
-function Select({ value, options, onChange }) {
-  const opts = options.includes(value) ? options : [value, ...options];
-  return (
-    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
-      {opts.map((o) => <option key={o}>{o}</option>)}
-    </select>
+    <div className="flex flex-col">
+      <div className="form-label-row">
+        <label className="form-label">{labelText}</label>
+        {lakhText && (
+          <span className="money-input__lakh-badge">{lakhText}</span>
+        )}
+      </div>
+      <div className="money-input__wrap">
+        <div className="money-input__prefix">
+          <span className="money-input__currency">₹</span>
+        </div>
+        <input
+          type="number"
+          min={0}
+          step="any"
+          placeholder={placeholder}
+          value={Number.isFinite(value) ? value : ""}
+          onChange={(e) =>
+            onChange(e.target.value === "" ? NaN : Number(e.target.value))
+          }
+          className="money-input__field"
+        />
+      </div>
+    </div>
   );
 }
 
 export default function Form({ applicant, setField, onSubmit, loading }) {
   const [open, setOpen] = useState(false);
-  const ageYears = Math.round(Math.abs(applicant.DAYS_BIRTH) / 365);
-  const empYears = Math.round((Math.abs(applicant.DAYS_EMPLOYED) / 365) * 10) / 10;
-  const restKeys = Object.keys(applicant).filter((k) => !PRIMARY_KEYS.includes(k));
+  const [bgFilter, setBgFilter] = useState("");
 
-  const money = (k, hint) => (
-    <Field name={label(k)} hint={hint}><Num value={applicant[k]} min={0} onChange={(v) => setField(k, v)} /></Field>
+  const ageYears = Math.round(Math.abs(applicant.DAYS_BIRTH) / 365);
+  const empYears =
+    Math.round((Math.abs(applicant.DAYS_EMPLOYED) / 365) * 10) / 10;
+
+  const restKeys = Object.keys(applicant).filter(
+    (k) => !PRIMARY_KEYS.includes(k)
+  );
+
+  const filteredRestKeys = restKeys.filter(
+    (k) =>
+      k.toLowerCase().includes(bgFilter.toLowerCase()) ||
+      label(k).toLowerCase().includes(bgFilter.toLowerCase())
   );
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-6">
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-slate-900">Loan details</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {money("AMT_CREDIT")}{money("AMT_ANNUITY")}{money("AMT_GOODS_PRICE")}
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+      className="space-y-6"
+    >
+      {/* 1. Credit Facility Request */}
+      <section className="form-section">
+        <FormSectionHeader
+          icon={CreditCard}
+          title="Loan Facility Request"
+          subtitle="Proposed credit principal, term structure, and asset valuation"
+        />
+        <div className="form-grid-3">
+          <MoneyInput
+            labelText="Loan Amount (Credit)"
+            value={applicant.AMT_CREDIT}
+            onChange={(v) => setField("AMT_CREDIT", v)}
+          />
+          <MoneyInput
+            labelText="Annual Annuity (EMI)"
+            value={applicant.AMT_ANNUITY}
+            onChange={(v) => setField("AMT_ANNUITY", v)}
+          />
+          <MoneyInput
+            labelText="Goods / Asset Value"
+            value={applicant.AMT_GOODS_PRICE}
+            onChange={(v) => setField("AMT_GOODS_PRICE", v)}
+          />
         </div>
       </section>
 
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-slate-900">Income & work</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {money("AMT_INCOME_TOTAL")}
-          <Field name={label("NAME_INCOME_TYPE")}>
-            <Select value={applicant.NAME_INCOME_TYPE} options={INCOME_TYPES} onChange={(v) => setField("NAME_INCOME_TYPE", v)} />
-          </Field>
-          <Field name="Employment length (years)" hint="stored internally as negative days">
-            <Num value={empYears} min={0} step="0.1"
-              onChange={(v) => setField("DAYS_EMPLOYED", Number.isFinite(v) ? Math.round(-v * 365) : NaN)} />
-          </Field>
-        </div>
-      </section>
+      {/* 2. Income & Employment */}
+      <section className="form-section">
+        <FormSectionHeader
+          icon={Briefcase}
+          title="Income & Employment Verification"
+          subtitle="Declared cash flow stability and occupational category"
+        />
+        <div className="form-grid-3">
+          <MoneyInput
+            labelText="Annual Total Income"
+            value={applicant.AMT_INCOME_TOTAL}
+            onChange={(v) => setField("AMT_INCOME_TOTAL", v)}
+          />
 
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-slate-900">External credit scores (0 to 1)</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {["EXT_SOURCE_2", "EXT_SOURCE_3"].map((k) => (
-            <Field key={k} name={label(k)}>
-              <div className="flex items-center gap-3">
-                <input type="range" min="0" max="1" step="0.01" className="w-full accent-indigo-600"
-                  value={applicant[k]} onChange={(e) => setField(k, Number(e.target.value))} />
-                <span className="w-12 text-right text-sm tabular-nums">{Number(applicant[k]).toFixed(2)}</span>
+          <div>
+            <label className="form-label mb-1 block">Income Category</label>
+            <select
+              value={applicant.NAME_INCOME_TYPE}
+              onChange={(e) => setField("NAME_INCOME_TYPE", e.target.value)}
+              className="form-select"
+            >
+              {INCOME_TYPES.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div className="form-label-row">
+              <label className="form-label">Employment Length</label>
+              <span className="form-label-hint">(Negative days internally)</span>
+            </div>
+            <div className="form-input--suffix-wrap">
+              <input
+                type="number"
+                min={0}
+                max={50}
+                step="0.1"
+                value={Number.isFinite(empYears) ? empYears : ""}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setField(
+                    "DAYS_EMPLOYED",
+                    Number.isFinite(val) ? Math.round(-val * 365) : NaN
+                  );
+                }}
+                className="form-input"
+              />
+              <div className="form-input--suffix">
+                <span className="form-input--suffix-text">Years</span>
               </div>
-            </Field>
-          ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-slate-900">Applicant profile</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Field name="Age (years)" hint="stored internally as negative days">
-            <Num value={ageYears} min={18} max={80} step="1"
-              onChange={(v) => setField("DAYS_BIRTH", Number.isFinite(v) ? Math.round(-v * 365) : NaN)} />
-          </Field>
-          <Field name={label("NAME_EDUCATION_TYPE")}>
-            <Select value={applicant.NAME_EDUCATION_TYPE} options={EDUCATION_TYPES} onChange={(v) => setField("NAME_EDUCATION_TYPE", v)} />
-          </Field>
-          <Field name={label("NAME_HOUSING_TYPE")}>
-            <Select value={applicant.NAME_HOUSING_TYPE} options={HOUSING_TYPES} onChange={(v) => setField("NAME_HOUSING_TYPE", v)} />
-          </Field>
+      {/* 3. External Bureau Ratings (EXT_SOURCE) */}
+      <section className="form-section">
+        <FormSectionHeader
+          icon={Activity}
+          title="External Credit Bureau Analytics"
+          subtitle="Normalized risk score feeds (0.00 to 1.00) — Primary underwriting drivers"
+        />
+        <div className="form-grid-2">
+          {[
+            {
+              key: "EXT_SOURCE_2",
+              name: "External Credit Score 2",
+              source: "TransUnion / CIBIL Aggregate",
+            },
+            {
+              key: "EXT_SOURCE_3",
+              name: "External Credit Score 3",
+              source: "Experian / CRIF Normalized",
+            },
+          ].map(({ key, name, source }) => {
+            const score = Number(applicant[key]) || 0;
+            const tier = getCreditScoreTier(score);
+            return (
+              <div key={key} className="ext-score-card">
+                <div>
+                  <div className="ext-score-card__header">
+                    <span className="ext-score-card__name">{name}</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.color}`}
+                    >
+                      {tier.text}
+                    </span>
+                  </div>
+                  <p className="ext-score-card__source">{source}</p>
+                </div>
+
+                <div>
+                  <div className="ext-score-card__range-row">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={score}
+                      onChange={(e) =>
+                        setField(key, parseFloat(e.target.value))
+                      }
+                      className="ext-score-card__range"
+                    />
+                    <div className="ext-score-card__value-box">
+                      <span className="ext-score-card__value">
+                        {score.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ext-score-card__scale">
+                    <span>0.00 (Poor)</span>
+                    <span>0.50</span>
+                    <span>1.00 (Prime)</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-slate-50">
-        <button type="button" onClick={() => setOpen(!open)}
-          className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-700">
-          Background data ({restKeys.length} more fields, pre-filled from preset)
-          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      {/* 4. Applicant Profile & Demographics */}
+      <section className="form-section">
+        <FormSectionHeader
+          icon={UserCheck}
+          title="Applicant Profile & Demographics"
+          subtitle="Education, residential status, and legal age qualifications"
+        />
+        <div className="form-grid-3">
+          <div>
+            <div className="form-label-row">
+              <label className="form-label">Age</label>
+              <span className="form-label-hint">(Negative days internally)</span>
+            </div>
+            <div className="form-input--suffix-wrap">
+              <input
+                type="number"
+                min={18}
+                max={90}
+                step="1"
+                value={Number.isFinite(ageYears) ? ageYears : ""}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setField(
+                    "DAYS_BIRTH",
+                    Number.isFinite(val) ? Math.round(-val * 365) : NaN
+                  );
+                }}
+                className="form-input"
+              />
+              <div className="form-input--suffix">
+                <span className="form-input--suffix-text">Yrs</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="sm:col-span-1">
+            <label className="form-label mb-1 block">Education Level</label>
+            <select
+              value={applicant.NAME_EDUCATION_TYPE}
+              onChange={(e) =>
+                setField("NAME_EDUCATION_TYPE", e.target.value)
+              }
+              className="form-select--sm"
+            >
+              {EDUCATION_TYPES.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:col-span-1">
+            <label className="form-label mb-1 block">Residential Status</label>
+            <select
+              value={applicant.NAME_HOUSING_TYPE}
+              onChange={(e) => setField("NAME_HOUSING_TYPE", e.target.value)}
+              className="form-select--sm"
+            >
+              {HOUSING_TYPES.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Background Data Annex (60 Fields) */}
+      <section className="annex-section">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="annex-toggle"
+        >
+          <div className="annex-toggle__label">
+            <FileSpreadsheet size={15} className="text-slate-400" />
+            <span>
+              Underwriting Data Annex ({restKeys.length} Background Audit Parameters)
+            </span>
+            <span className="annex-toggle__meta">
+              (Pre-filled from training distribution • 0 missing values)
+            </span>
+          </div>
+          <div className="annex-toggle__action">
+            <span className="annex-toggle__action-text">{open ? "Hide" : "Inspect"}</span>
+            {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </div>
         </button>
+
         {open && (
-          <div className="grid grid-cols-1 gap-3 border-t border-slate-200 p-4 sm:grid-cols-3">
-            {restKeys.map((k) => (
-              <Field key={k} name={label(k)}>
-                {typeof applicant[k] === "number"
-                  ? <Num value={applicant[k]} onChange={(v) => setField(k, v)} />
-                  : <input className={inputCls} value={applicant[k]} onChange={(e) => setField(k, e.target.value)} />}
-              </Field>
-            ))}
+          <div className="annex-body">
+            <div className="annex-search-wrap">
+              <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search background parameters (e.g. DOCUMENT, RATING, SOCIAL, REGION)..."
+                value={bgFilter}
+                onChange={(e) => setBgFilter(e.target.value)}
+                className="annex-search"
+              />
+            </div>
+
+            <div className="annex-fields-grid">
+              {filteredRestKeys.map((k) => (
+                <div key={k} className="annex-field-card">
+                  <label
+                    className="annex-field-label"
+                    title={k}
+                  >
+                    {label(k)}
+                  </label>
+                  {typeof applicant[k] === "number" ? (
+                    <input
+                      type="number"
+                      step="any"
+                      value={applicant[k]}
+                      onChange={(e) => setField(k, Number(e.target.value))}
+                      className="annex-field-input"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={applicant[k]}
+                      onChange={(e) => setField(k, e.target.value)}
+                      className="annex-field-text"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>
 
-      <button type="submit" disabled={loading}
-        className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-        {loading ? "Evaluating..." : "Evaluate application"}
+      {/* 6. Primary Action CTA Button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="group btn-submit"
+      >
+        <Sparkles
+          size={18}
+          className={loading ? "animate-spin" : "transition-transform group-hover:scale-110"}
+        />
+        <span>
+          {loading
+            ? "Running Neural Inference (50 Passes + SHAP)..."
+            : "Run AI Underwriting Assessment"}
+        </span>
       </button>
     </form>
   );
