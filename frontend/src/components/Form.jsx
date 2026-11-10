@@ -97,22 +97,22 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
       <section className="form-section">
         <FormSectionHeader
           icon={CreditCard}
-          title="Loan Facility Request"
-          subtitle="Proposed credit principal, term structure, and asset valuation"
+          title="Loan Request"
+          subtitle="Requested loan amount, EMI, and asset/purchase value"
         />
         <div className="form-grid-3">
           <MoneyInput
-            labelText="Loan Amount (Credit)"
+            labelText="Loan Amount"
             value={applicant.AMT_CREDIT}
             onChange={(v) => setField("AMT_CREDIT", v)}
           />
           <MoneyInput
-            labelText="Annual Annuity (EMI)"
+            labelText="Annual EMI / Annuity"
             value={applicant.AMT_ANNUITY}
             onChange={(v) => setField("AMT_ANNUITY", v)}
           />
           <MoneyInput
-            labelText="Goods / Asset Value"
+            labelText="Asset / Goods Price"
             value={applicant.AMT_GOODS_PRICE}
             onChange={(v) => setField("AMT_GOODS_PRICE", v)}
           />
@@ -123,12 +123,12 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
       <section className="form-section">
         <FormSectionHeader
           icon={Briefcase}
-          title="Income & Employment Verification"
-          subtitle="Declared cash flow stability and occupational category"
+          title="Income & Work Details"
+          subtitle="Applicant earnings, job type, and work experience"
         />
         <div className="form-grid-3">
           <MoneyInput
-            labelText="Annual Total Income"
+            labelText="Total Annual Income"
             value={applicant.AMT_INCOME_TOTAL}
             onChange={(v) => setField("AMT_INCOME_TOTAL", v)}
           />
@@ -150,8 +150,8 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
 
           <div>
             <div className="form-label-row">
-              <label className="form-label">Employment Length</label>
-              <span className="form-label-hint">(Negative days internally)</span>
+              <label className="form-label">Work Experience</label>
+              <span className="form-label-hint">(in current job)</span>
             </div>
             <div className="form-input--suffix-wrap">
               <input
@@ -181,20 +181,20 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
       <section className="form-section">
         <FormSectionHeader
           icon={Activity}
-          title="External Credit Bureau Analytics"
-          subtitle="Normalized risk score feeds (0.00 to 1.00) — Primary underwriting drivers"
+          title="Credit Bureau Scores (CIBIL / Experian)"
+          subtitle="Normalized credit scores (0.00 = Poor, 1.00 = Excellent)"
         />
         <div className="form-grid-2">
           {[
             {
               key: "EXT_SOURCE_2",
-              name: "External Credit Score 2",
-              source: "TransUnion / CIBIL Aggregate",
+              name: "CIBIL / Equifax Score",
+              source: "Credit Bureau Feed 1 (0.0 to 1.0)",
             },
             {
               key: "EXT_SOURCE_3",
-              name: "External Credit Score 3",
-              source: "Experian / CRIF Normalized",
+              name: "Experian / CRIF Score",
+              source: "Credit Bureau Feed 2 (0.0 to 1.0)",
             },
           ].map(({ key, name, source }) => {
             const score = Number(applicant[key]) || 0;

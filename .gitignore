@@ -2,11 +2,21 @@ __pycache__/
 *.pyc
 .env
 venv/
-env/
 .venv/
 *.pt
+*.pth
 *.pkl
-.ipynb_checkpoints/
+*.npy
+*.csv
+.pytest_cache/
 .vscode/
 *.log
 node_modules/
+dist/
+frontend/dist/
+
+# Notes & Prompts
+prompts/
+implementation.md
+cloud_deployment*.md
+*_notes.md

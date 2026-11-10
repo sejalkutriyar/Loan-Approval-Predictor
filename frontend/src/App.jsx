@@ -132,17 +132,17 @@ export default function App() {
 
       {/* 2. Main Dashboard Content */}
       <main className="app-main">
-        {/* Applicant Benchmark Profile Switcher */}
+        {/* Demo Applicant Profiles Switcher */}
         <section className="preset-section">
           <div className="preset-section__header">
             <div className="flex items-center gap-2">
               <SlidersHorizontal size={15} className="text-indigo-400" />
               <h2 className="preset-section__title">
-                Underwriting Benchmark Presets (One-Click Profiles)
+                Demo Profiles: [Prime] [Average] [High Risk]
               </h2>
             </div>
             <span className="preset-section__subtitle">
-              Pre-validated 71-field payloads
+              Click any profile to test different applicant scenarios
             </span>
           </div>
 
@@ -187,10 +187,10 @@ export default function App() {
 
                   <p className="preset-card__desc">
                     {isPrime
-                      ? "Scores 0.75+ • Low Debt • Automatic Disbursal"
+                      ? "High Credit Score • Low Debt • Gets Approved"
                       : isBorderline
-                      ? "Scores 0.40 • ₹9.0L Loan • Committee Referral"
-                      : "Scores 0.15 • High DTI Ratio • Risk Rejection"}
+                      ? "Moderate Score • ₹9.0L Loan • Needs Manual Review"
+                      : "Low Credit Score • High Debt • Gets Rejected"}
                   </p>
                 </button>
               );
@@ -206,10 +206,10 @@ export default function App() {
               <div className="form-panel__header">
                 <div>
                   <h2 className="form-panel__title">
-                    <span>Credit Application Intake</span>
+                    <span>Loan Application Details</span>
                   </h2>
                   <p className="form-panel__subtitle">
-                    Active Underwriting Dossier • 71 Risk Variables (12 Categorical, 59 Continuous)
+                    Enter applicant financial details or test with demo profiles above
                   </p>
                 </div>
                 <span className="form-panel__profile-badge">

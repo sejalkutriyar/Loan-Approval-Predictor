@@ -42,22 +42,63 @@ export const PRIMARY_KEYS = [
 ];
 
 export const LABELS = {
-  AMT_CREDIT: "Loan Amount (Credit)",
-  AMT_ANNUITY: "Monthly / Annual EMI",
-  AMT_GOODS_PRICE: "Goods / Asset Valuation",
+  AMT_CREDIT: "Loan Amount",
+  AMT_ANNUITY: "Annual EMI / Annuity",
+  AMT_GOODS_PRICE: "Asset / Goods Price",
   AMT_INCOME_TOTAL: "Total Annual Income",
-  EXT_SOURCE_2: "Credit Bureau Rating (CIBIL/Equifax 2)",
-  EXT_SOURCE_3: "Credit Bureau Rating (Experian 3)",
+  EXT_SOURCE_2: "CIBIL / Equifax Credit Score",
+  EXT_SOURCE_3: "Experian / CRIF Credit Score",
   DAYS_BIRTH: "Applicant Age",
-  DAYS_EMPLOYED: "Total Employment Duration",
-  NAME_INCOME_TYPE: "Employment Category",
-  NAME_EDUCATION_TYPE: "Highest Education Level",
+  DAYS_EMPLOYED: "Work Experience",
+  NAME_INCOME_TYPE: "Income Category",
+  NAME_EDUCATION_TYPE: "Education Level",
   NAME_HOUSING_TYPE: "Residential Status",
 };
 
-export const label = (k) =>
-  LABELS[k] ||
-  k.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+export const label = (k) => {
+  if (LABELS[k]) return LABELS[k];
+
+  // Handle one-hot encoded or raw categorical dummy features like:
+  // "NAME_HOUSING_TYPE_With parents" or "NAME_HOUSING_TYPE with parents"
+  // "NAME_EDUCATION_TYPE_Higher education" or "NAME_EDUCATION_TYPE higher education"
+  // "NAME_INCOME_TYPE_Working", etc.
+  const prefixes = [
+    { key: "NAME_HOUSING_TYPE", display: "Housing Type" },
+    { key: "NAME_EDUCATION_TYPE", display: "Education Type" },
+    { key: "NAME_INCOME_TYPE", display: "Income Type" },
+    { key: "NAME_CONTRACT_TYPE", display: "Contract Type" },
+    { key: "NAME_TYPE_SUITE", display: "Suite Type" },
+    { key: "NAME_FAMILY_STATUS", display: "Family Status" },
+    { key: "FLAG_OWN_REALTY", display: "Own Realty" },
+    { key: "FLAG_OWN_CAR", display: "Own Car" },
+    { key: "CODE_GENDER", display: "Gender" },
+    { key: "OCCUPATION_TYPE", display: "Occupation" },
+    { key: "ORGANIZATION_TYPE", display: "Organization" },
+  ];
+
+  for (const p of prefixes) {
+    // Check if key starts with prefix (case-insensitive, followed by '_' or space)
+    const pattern = new RegExp(`^${p.key}[_\\s](.+)$`, "i");
+    const match = k.match(pattern);
+    if (match) {
+      const val = match[1].replace(/_/g, " ").trim();
+      // Capitalize first letter of value if needed
+      const formattedVal = val.charAt(0).toUpperCase() + val.slice(1);
+      return `${p.display} - ${formattedVal}`;
+    }
+  }
+
+  // Remove leading NAME_ or FLAG_DOCUMENT_ if any other generic name exists
+  let cleaned = k;
+  if (/^NAME_/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^NAME_/i, "");
+  }
+
+  return cleaned
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase());
+};
 
 export const inr = (v) => {
   if (v == null || isNaN(v)) return "₹0";
