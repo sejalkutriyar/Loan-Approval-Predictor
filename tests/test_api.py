@@ -33,6 +33,27 @@ def test_root_endpoint():
     assert "running" in response.json().get("message", "")
 
 
+def test_health_endpoint():
+    """Verify health & telemetry endpoint."""
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["model"]["name"] == "Production ANN"
+    assert data["model"]["is_loaded"] is True
+    assert data["model"]["input_features"] == 171
+
+
+def test_strict_literal_validation_422(prime_payload):
+    """Submitting an invalid categorical value must return HTTP 422 Unprocessable Entity."""
+    invalid_payload = dict(prime_payload)
+    invalid_payload["NAME_INCOME_TYPE"] = "InvalidAlienProfession123"
+    response = client.post("/api/v1/predict", json=invalid_payload)
+    assert response.status_code == 422
+    errors = response.json().get("detail", [])
+    assert any("NAME_INCOME_TYPE" in str(err) for err in errors)
+
+
 def test_predict_prime_applicant(prime_payload):
     """Prime applicant must be Approved with low default probability (p <= 0.10)."""
     response = client.post("/api/v1/predict", json=prime_payload)
@@ -83,3 +104,22 @@ def test_predict_deterministic_seeds(borderline_payload):
     assert res1["uncertainty_score"] == res2["uncertainty_score"]
     assert res1["decision"] == res2["decision"]
 
+
+def test_predict_batch_api(prime_payload, borderline_payload, high_risk_payload):
+    """Batch prediction API must process multiple applicants and match individual decisions."""
+    batch_payload = [prime_payload, borderline_payload, high_risk_payload]
+    response = client.post("/api/v1/predict/batch", json=batch_payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_processed"] == 3
+    preds = data["predictions"]
+    assert len(preds) == 3
+    assert preds[0]["decision"] == "Approved"
+    assert preds[1]["decision"] == "Needs Manual Review"
+    assert preds[2]["decision"] == "Rejected"
+
+
+def test_predict_batch_empty_list_400():
+    """Empty batch submission must return HTTP 400 Bad Request."""
+    response = client.post("/api/v1/predict/batch", json=[])
+    assert response.status_code == 400

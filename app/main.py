@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import predict
+from app.routers import predict, health
 
 app = FastAPI(
     title="Loan Approval Predictor API",
@@ -21,8 +21,9 @@ app.add_middleware(
 )
 
 app.include_router(predict.router, prefix="/api/v1", tags=["Prediction"])
+app.include_router(health.router, prefix="/api/v1", tags=["Health & Telemetry"])
 
 
 @app.get("/")
 def root():
-    return {"message": "Loan Approval Predictor API is running"}
+    return {"message": "Loan Approval Predictor API is running"}

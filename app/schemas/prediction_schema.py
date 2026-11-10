@@ -29,6 +29,20 @@ class PredictionResponse(BaseModel):
     model_version: str = "ANN-v1"
 
 
+class BatchPredictionItem(BaseModel):
+    applicant_index: int
+    decision: str
+    default_probability: float
+    confidence_score: float
+    uncertainty_score: float
+
+
+class BatchPredictionResponse(BaseModel):
+    total_processed: int
+    predictions: List[BatchPredictionItem]
+    model_version: str = "ANN-v1"
+
+
 class RecourseResponse(BaseModel):
     recourse_needed: bool
     default_probability: float

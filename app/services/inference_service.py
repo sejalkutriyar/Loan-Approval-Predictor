@@ -2,6 +2,7 @@ import time
 import threading
 import numpy as np
 import torch
+from typing import List, Dict, Any
 from app.models.ann_model import load_production_model
 from app.models.preprocessing import preprocess_applicant
 from app.services.uncertainty_service import mc_dropout_predict
@@ -76,6 +77,39 @@ def predict_applicant(applicant_data: dict) -> dict:
         }
 
 
+def predict_batch_applicants(applicants_data: List[dict]) -> dict:
+    """Vectorized / efficient batch scoring without re-running heavy SHAP attribution per row."""
+    with _lock:
+        t_start = time.perf_counter()
+        results = []
+        for idx, applicant in enumerate(applicants_data):
+            _, _, calibrated_prob, uncertainty = _score(applicant)
+
+            if calibrated_prob <= APPROVE_MAX:
+                decision = "Approved"
+            elif calibrated_prob > REJECT_MIN:
+                decision = "Rejected"
+            else:
+                decision = "Needs Manual Review"
+            if uncertainty > UNCERTAINTY_MAX:
+                decision = "Needs Manual Review"
+
+            results.append({
+                "applicant_index": idx,
+                "decision": decision,
+                "default_probability": round(calibrated_prob, 4),
+                "confidence_score": round(1 - calibrated_prob, 4),
+                "uncertainty_score": round(uncertainty, 4),
+            })
+
+        print(f"[timing] batch predict ({len(applicants_data)} items) took {(time.perf_counter() - t_start) * 1000:.0f} ms")
+        return {
+            "total_processed": len(results),
+            "predictions": results,
+            "model_version": "ANN-v1",
+        }
+
+
 def recourse_applicant(applicant_data: dict) -> dict:
     """On-demand DiCE recourse: what minimal changes would reach the Approved zone."""
     with _lock:
@@ -101,10 +135,9 @@ def recourse_applicant(applicant_data: dict) -> dict:
                 "No feasible change within the allowed limits; manual review recommended."
             )
         except Exception as e:
-            print(f"[warning] DiCE failed: {e}")
-            message = "Recourse could not be computed for this applicant."
+            message = f"Recourse generation failed: {e}"
 
-        print(f"[timing] total recourse took {(time.perf_counter() - t_start) * 1000:.0f} ms")
+        print(f"[timing] DiCE took {(time.perf_counter() - t_start) * 1000:.0f} ms")
 
         return {
             "recourse_needed": True,
