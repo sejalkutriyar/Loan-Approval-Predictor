@@ -123,3 +123,16 @@ def test_predict_batch_empty_list_400():
     """Empty batch submission must return HTTP 400 Bad Request."""
     response = client.post("/api/v1/predict/batch", json=[])
     assert response.status_code == 400
+
+
+def test_fairness_report_endpoint():
+    """Verify that fairness report endpoint returns valid demographic parity metrics and safeguards."""
+    response = client.get("/api/v1/fairness-report")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["sensitive_attribute"] == "CODE_GENDER"
+    assert "demographic_parity" in data
+    assert "disparate_impact_ratio" in data["demographic_parity"]
+    assert "safeguards" in data
+    assert "EXCLUDED" in data["safeguards"]["gender_in_reason_codes"]
+    assert "IMMUTABLE" in data["safeguards"]["gender_in_recourse"]

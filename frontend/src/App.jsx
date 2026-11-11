@@ -11,12 +11,14 @@ import {
   Clock,
   User,
   SlidersHorizontal,
+  Scale,
 } from "lucide-react";
 import { PRESETS } from "./presets.js";
-import { predict, recourse } from "./api.js";
+import { predict, recourse, getFairnessReport } from "./api.js";
 import Form from "./components/Form.jsx";
 import Result from "./components/Result.jsx";
 import Recourse from "./components/Recourse.jsx";
+import FairnessModal from "./components/FairnessModal.jsx";
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
@@ -29,6 +31,26 @@ export default function App() {
   const [recLoading, setRecLoading] = useState(false);
   const [error, setError] = useState("");
   const [recError, setRecError] = useState("");
+  const [fairnessOpen, setFairnessOpen] = useState(false);
+  const [fairnessReport, setFairnessReport] = useState(null);
+  const [fairnessLoading, setFairnessLoading] = useState(false);
+  const [fairnessError, setFairnessError] = useState("");
+
+  const openFairnessAudit = async () => {
+    setFairnessOpen(true);
+    if (!fairnessReport) {
+      setFairnessLoading(true);
+      setFairnessError("");
+      try {
+        const rep = await getFairnessReport();
+        setFairnessReport(rep);
+      } catch (err) {
+        setFairnessError(err.message);
+      } finally {
+        setFairnessLoading(false);
+      }
+    }
+  };
 
   const setField = (k, v) => setApplicant((a) => ({ ...a, [k]: v }));
 
@@ -126,6 +148,15 @@ export default function App() {
               <User size={12} className="text-slate-400" />
               <span>Officer: Sejal Kumari</span>
             </div>
+
+            <button
+              onClick={openFairnessAudit}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition-all shadow-sm"
+              title="View Responsible AI & Fairness Audit Report"
+            >
+              <Scale size={13} className="text-indigo-400" />
+              <span>Fairness &amp; Audit</span>
+            </button>
           </div>
         </div>
       </header>
@@ -307,6 +338,15 @@ export default function App() {
       <footer className="app-footer">
         Loan Approval Decision Support System • Advanced Data Science OJT • PyTorch • FastAPI • React
       </footer>
+
+      {/* 5. Responsible AI Fairness Audit Modal */}
+      <FairnessModal
+        isOpen={fairnessOpen}
+        onClose={() => setFairnessOpen(false)}
+        report={fairnessReport}
+        loading={fairnessLoading}
+        error={fairnessError}
+      />
     </div>
   );
 }

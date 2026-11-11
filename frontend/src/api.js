@@ -18,7 +18,13 @@ export async function predict(applicant) {
   try { return (await client.post("/predict", applicant)).data; }
   catch (e) { throw new Error(errMsg(e)); }
 }
+
 export async function recourse(applicant) {
   try { return (await client.post("/recourse", applicant)).data; }
+  catch (e) { throw new Error(errMsg(e)); }
+}
+
+export async function getFairnessReport() {
+  try { return (await client.get("/fairness-report")).data; }
   catch (e) { throw new Error(errMsg(e)); }
 }
