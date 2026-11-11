@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 
 class ReasonCode(BaseModel):
@@ -20,6 +20,7 @@ class Counterfactual(BaseModel):
 
 
 class PredictionResponse(BaseModel):
+    application_id: Optional[str] = None
     decision: str
     default_probability: float
     confidence_score: float
@@ -31,6 +32,7 @@ class PredictionResponse(BaseModel):
 
 class BatchPredictionItem(BaseModel):
     applicant_index: int
+    application_id: Optional[str] = None
     decision: str
     default_probability: float
     confidence_score: float
@@ -48,3 +50,14 @@ class RecourseResponse(BaseModel):
     default_probability: float
     counterfactuals: List[Counterfactual] = []
     message: str
+
+
+class ApplicationRecord(BaseModel):
+    id: str
+    created_at: str
+    applicant: dict
+    decision: str
+    default_probability: float
+    confidence_score: float
+    uncertainty_score: float
+    officer: str = "Officer: Sejal Kumari"
