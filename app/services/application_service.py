@@ -42,10 +42,15 @@ def save_prediction_record(
     return app_id
 
 
-def get_recent_applications(limit: int = 50, skip: int = 0) -> List[Dict[str, Any]]:
-    """Fetches recent loan applications for the audit table."""
+def get_recent_applications(
+    limit: int = 50,
+    skip: int = 0,
+    officer: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Fetches recent loan applications for the audit table, optionally filtered by officer."""
     db = get_sync_db()
-    cursor = db["applications"].find({}).sort("created_at", -1).skip(skip).limit(limit)
+    query = {"officer": officer} if officer else {}
+    cursor = db["applications"].find(query).sort("created_at", -1).skip(skip).limit(limit)
 
     records = []
     for doc in cursor:
@@ -75,4 +80,3 @@ def get_application_by_id(app_id: str) -> Optional[Dict[str, Any]]:
         "applicant": doc.get("applicant"),
         "prediction": doc.get("prediction"),
     }
-

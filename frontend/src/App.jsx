@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Login from "./components/Login.jsx";
 import {
   ShieldCheck,
   Building2,
@@ -12,9 +13,10 @@ import {
   User,
   SlidersHorizontal,
   Scale,
+  LogOut,
 } from "lucide-react";
 import { PRESETS } from "./presets.js";
-import { predict, recourse, getFairnessReport } from "./api.js";
+import { predict, recourse, getFairnessReport, getCurrentUser, logout } from "./api.js";
 import Form from "./components/Form.jsx";
 import Result from "./components/Result.jsx";
 import Recourse from "./components/Recourse.jsx";
@@ -23,6 +25,47 @@ import FairnessModal from "./components/FairnessModal.jsx";
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 export default function App() {
+  // ── Authentication State (Hooks at top unconditionally) ──
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("jwt_token"));
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("jwt_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Verify and hydrate current user profile on mount
+  useEffect(() => {
+    const token = localStorage.getItem("jwt_token");
+    if (token) {
+      getCurrentUser()
+        .then((user) => {
+          setCurrentUser(user);
+          setIsLoggedIn(true);
+        })
+        .catch(() => {
+          // Token expired or invalid
+          logout();
+          setIsLoggedIn(false);
+          setCurrentUser(null);
+        });
+    }
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+  };
+
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+  };
+
+  // ── Main Dashboard Application State ──
   const [applicant, setApplicant] = useState(clone(PRESETS[1].data));
   const [active, setActive] = useState("borderline");
   const [result, setResult] = useState(null);
@@ -108,6 +151,15 @@ export default function App() {
     evaluate(next);
   };
 
+  // If user is not logged in, render the Login screen
+  if (!isLoggedIn) {
+    return <Login onLogin={handleLoginSuccess} />;
+  }
+
+  const officerLabel =
+    currentUser?.full_name ||
+    (currentUser?.username ? `Officer: ${currentUser.username}` : "Officer: Sejal Kumari");
+
   return (
     <div className="app-shell">
       {/* 1. Institutional Top Navigation Bar */}
@@ -144,9 +196,15 @@ export default function App() {
               <span>ANN-v1 Production (171-D)</span>
             </div>
 
+            {/* Current Officer / User Badge */}
             <div className="badge-pill">
               <User size={12} className="text-slate-400" />
-              <span>Officer: Sejal Kumari</span>
+              <span>{officerLabel}</span>
+              {currentUser?.role && (
+                <span className="ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  {currentUser.role}
+                </span>
+              )}
             </div>
 
             <button
@@ -156,6 +214,16 @@ export default function App() {
             >
               <Scale size={13} className="text-indigo-400" />
               <span>Fairness &amp; Audit</span>
+            </button>
+
+            {/* Logout Action Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition-all shadow-sm"
+              title="Sign out of underwriting session"
+            >
+              <LogOut size={13} className="text-rose-400" />
+              <span>Logout</span>
             </button>
           </div>
         </div>
@@ -182,7 +250,6 @@ export default function App() {
               const isSelected = active === p.id;
               const isPrime = p.id === "prime";
               const isBorderline = p.id === "borderline";
-              const isHigh = p.id === "high_risk";
 
               return (
                 <button
