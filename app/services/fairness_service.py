@@ -1,9 +1,16 @@
 import json
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List
-from app.services.inference_service import _score, APPROVE_MAX, REJECT_MIN
+from app.services.inference_service import score_applicant, APPROVE_MAX, REJECT_MIN
 
 ROOT = Path(__file__).resolve().parent.parent.parent
+
+# The benchmark cohort is fixed, so the report is stable; cache it to avoid
+# rescoring 30 applicants on every audit request.
+_CACHE_TTL_SECONDS = 300
+_cache: Dict[str, Any] = {"report": None, "expires_at": 0.0}
 
 
 def evaluate_cohort_fairness(cohort_applicants: List[dict]) -> Dict[str, Any]:
@@ -28,14 +35,14 @@ def evaluate_cohort_fairness(cohort_applicants: List[dict]) -> Dict[str, Any]:
         # Male version
         m_app = dict(app)
         m_app["CODE_GENDER"] = "M"
-        _, _, p_m, u_m = _score(m_app)
+        p_m, u_m = score_applicant(m_app)
         dec_m = "Approved" if p_m <= APPROVE_MAX else ("Rejected" if p_m > REJECT_MIN else "Needs Manual Review")
         results_m.append({"prob": p_m, "decision": dec_m, "uncertainty": u_m})
 
         # Female version
         f_app = dict(app)
         f_app["CODE_GENDER"] = "F"
-        _, _, p_f, u_f = _score(f_app)
+        p_f, u_f = score_applicant(f_app)
         dec_f = "Approved" if p_f <= APPROVE_MAX else ("Rejected" if p_f > REJECT_MIN else "Needs Manual Review")
         results_f.append({"prob": p_f, "decision": dec_f, "uncertainty": u_f})
 
@@ -65,7 +72,7 @@ def evaluate_cohort_fairness(cohort_applicants: List[dict]) -> Dict[str, Any]:
     avg_delta = round(sum(diffs) / max(total, 1), 4)
 
     return {
-        "audit_timestamp": "2026-11-11T10:20:00Z",
+        "audit_timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "sensitive_attribute": "CODE_GENDER",
         "cohort_size": total,
         "demographic_parity": {
@@ -95,7 +102,7 @@ def evaluate_cohort_fairness(cohort_applicants: List[dict]) -> Dict[str, Any]:
     }
 
 
-def generate_benchmark_fairness_report() -> Dict[str, Any]:
+def _generate_report() -> Dict[str, Any]:
     """Generates fairness report on standard benchmark applicants + synthetic credit variations."""
     cohort = []
 
@@ -121,4 +128,16 @@ def generate_benchmark_fairness_report() -> Dict[str, Any]:
                 cohort.append(var)
 
     return evaluate_cohort_fairness(cohort)
+
+
+def generate_benchmark_fairness_report() -> Dict[str, Any]:
+    """Returns the cached benchmark fairness report, recomputing it every 5 minutes."""
+    now = time.monotonic()
+    if _cache["report"] is not None and now < _cache["expires_at"]:
+        return _cache["report"]
+
+    report = _generate_report()
+    _cache["report"] = report
+    _cache["expires_at"] = time.monotonic() + _CACHE_TTL_SECONDS
+    return report
 

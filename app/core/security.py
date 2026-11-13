@@ -4,7 +4,9 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 
-JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-loan-approval-jwt-key-2026-production")
+from app.core.config import get_jwt_secret
+
+JWT_SECRET = get_jwt_secret()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours
 

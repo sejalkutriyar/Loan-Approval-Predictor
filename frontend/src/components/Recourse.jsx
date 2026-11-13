@@ -2,60 +2,40 @@ import React from "react";
 import {
   Lightbulb,
   ArrowRight,
-  Sparkles,
   CheckCircle,
-  TrendingDown,
   RefreshCw,
 } from "lucide-react";
 import { label, fmtValue, pct } from "../fields.js";
 import "./recourse.css";
 
-export default function Recourse({
-  decision,
-  data,
-  loading,
-  error,
-  onRun,
-  onApply,
-}) {
+export default function Recourse({ decision, data, loading, error, onRun, onApply }) {
   if (decision === "Approved") return null;
+
+  const hasOptions = data?.counterfactuals?.length > 0;
 
   return (
     <div className="recourse-panel">
       <div className="recourse-panel__header">
-        <div className="flex items-center gap-2.5">
-          <div className="recourse-panel__icon-wrap">
-            <Lightbulb size={18} />
-          </div>
+        <div className="recourse-panel__intro">
+          <Lightbulb size={16} strokeWidth={1.75} className="recourse-panel__icon" />
           <div>
-            <h4 className="recourse-panel__title">
-              Counterfactual Recourse Studio (DiCE Engine)
-            </h4>
+            <h4 className="recourse-panel__title">Improvement options</h4>
             <p className="recourse-panel__subtitle">
-              Algorithmic recommendations to safely shift this applicant into the Approval Zone (p ≤ 9%)
+              Realistic changes that would move this application toward approval.
             </p>
           </div>
         </div>
 
-        <button
-          onClick={onRun}
-          disabled={loading}
-          className="btn-recourse"
-        >
+        <button type="button" onClick={onRun} disabled={loading} className="btn-recourse">
           {loading ? (
             <>
               <RefreshCw size={13} className="animate-spin" />
-              <span>Optimizing via DiCE (~600ms)...</span>
-            </>
-          ) : data ? (
-            <>
-              <RefreshCw size={13} />
-              <span>Re-run Optimization</span>
+              Searching…
             </>
           ) : (
             <>
-              <Sparkles size={13} />
-              <span>Compute Recourse Strategies</span>
+              <RefreshCw size={13} />
+              {data ? "Refresh options" : "Find improvement options"}
             </>
           )}
         </button>
@@ -65,60 +45,62 @@ export default function Recourse({
 
       {data && (
         <div className="recourse-results">
-          <div className="recourse-message-bar">
-            <span>{data.message}</span>
-            <span className="recourse-message-bar__action">
-              Apply 1 alternative pathway
-            </span>
-          </div>
+          <p className="recourse-message">{data.message}</p>
 
-          <div className="strategy-grid">
-            {data.counterfactuals.map((cf, i) => (
-              <div key={i} className="strategy-card">
-                <div>
+          {hasOptions ? (
+            <div className="strategy-grid">
+              {data.counterfactuals.map((cf, i) => (
+                <div key={i} className="strategy-card">
                   <div className="strategy-card__header">
                     <span className="strategy-card__number">
                       <span className="strategy-card__number-badge">{i + 1}</span>
-                      Strategy Alternative {i + 1}
+                      Option {i + 1}
                     </span>
                     <span className="strategy-card__new-risk">
-                      <TrendingDown size={11} /> New Default Risk: {pct(cf.new_default_probability)}
+                      New risk {pct(cf.new_default_probability)}
                     </span>
                   </div>
 
                   <div className="strategy-changes">
                     {cf.changes.map((c, j) => (
                       <div key={j} className="strategy-change-row">
-                        <span className="strategy-change-row__feature">
-                          {label(c.feature)}
-                        </span>
-                        <div className="strategy-change-row__values">
+                        <span className="strategy-change-row__feature">{label(c.feature)}</span>
+                        <span className="strategy-change-row__values">
                           <span className="strategy-change-row__old">
                             {fmtValue(c.feature, c.current)}
                           </span>
-                          <ArrowRight size={12} className="text-slate-600" />
+                          <ArrowRight size={11} className="strategy-change-row__arrow" />
                           <span className="strategy-change-row__new">
                             {fmtValue(c.feature, c.suggested)}
                           </span>
-                        </div>
+                        </span>
                       </div>
                     ))}
                   </div>
-                </div>
 
-                <button
-                  onClick={() => onApply(cf)}
-                  className="btn-apply-strategy"
-                >
-                  <CheckCircle size={14} />
-                  <span>Apply Strategy To Form &amp; Re-Underwrite</span>
-                </button>
-              </div>
-            ))}
-          </div>
+                  <button
+                    type="button"
+                    onClick={() => onApply(cf)}
+                    className="btn-apply-strategy"
+                  >
+                    <CheckCircle size={13} />
+                    Apply and re-assess
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            data.recourse_needed && (
+              <p className="strategy-empty">
+                No feasible combination was found within the allowed limits. A credit officer
+                should review the file.
+              </p>
+            )
+          )}
 
           <p className="recourse-disclaimer">
-            * Note: Reductions in loan amount take immediate effect upon approval restructuring. Credit bureau enhancements represent actionable medium-term financial rehabilitation pathways.
+            Suggestions come from a counterfactual search over the model, not financial
+            advice. Re-assessing shows the model&apos;s new estimate for the changed profile.
           </p>
         </div>
       )}

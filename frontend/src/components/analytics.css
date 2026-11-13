@@ -1,0 +1,355 @@
+/* =========================================================
+   analytics.css — Admin analytics & audit dashboard
+   ========================================================= */
+
+.analytics-page {
+  @apply min-w-0 space-y-5;
+}
+
+/* ── Page header ────────────────────────────────────────── */
+.analytics-header {
+  @apply flex flex-wrap items-end justify-between gap-3;
+}
+
+.analytics-eyebrow {
+  @apply text-[10.5px] font-semibold uppercase tracking-[0.14em] text-subtle;
+}
+
+.analytics-title {
+  @apply mt-1 font-display text-[24px] leading-tight tracking-[-0.01em] text-ink sm:text-[27px];
+}
+
+.analytics-subtitle {
+  @apply mt-1 max-w-[64ch] text-[12.5px] leading-relaxed text-muted;
+}
+
+.analytics-refresh {
+  @apply inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-medium text-ink transition-colors hover:border-line-strong hover:bg-paper-2 disabled:pointer-events-none disabled:opacity-60;
+}
+
+/* ── KPI cards ──────────────────────────────────────────── */
+.kpi-grid {
+  @apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.kpi-card {
+  @apply rounded-xl border border-line bg-surface p-4 shadow-card;
+}
+
+.kpi-card__top {
+  @apply flex items-start justify-between gap-2;
+}
+
+.kpi-card__label {
+  @apply inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted;
+}
+
+.kpi-card__tag {
+  @apply shrink-0 rounded-full border px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.06em];
+}
+
+.kpi-card__tag--offline {
+  @apply border-line bg-paper-2 text-subtle;
+}
+
+.kpi-card__tag--live {
+  @apply border-approved-line bg-approved-soft text-approved;
+}
+
+.kpi-card__value {
+  @apply mt-2.5 font-mono text-[26px] font-semibold leading-none text-ink;
+}
+
+.kpi-card__hint {
+  @apply mt-2 text-[10.5px] leading-relaxed text-subtle;
+}
+
+/* ── Panels ─────────────────────────────────────────────── */
+.analytics-grid {
+  @apply grid grid-cols-1 items-start gap-5 lg:grid-cols-12;
+}
+
+.analytics-grid__matrix {
+  @apply min-w-0 lg:col-span-5;
+}
+
+.analytics-grid__calibration {
+  @apply min-w-0 lg:col-span-7;
+}
+
+.panel {
+  @apply rounded-xl border border-line bg-surface p-4 shadow-card sm:p-5;
+}
+
+.panel__header {
+  @apply mb-4 flex flex-wrap items-start justify-between gap-2;
+}
+
+.panel__title {
+  @apply text-[13.5px] font-semibold text-ink;
+}
+
+.panel__subtitle {
+  @apply mt-0.5 text-[11.5px] text-muted;
+}
+
+.panel-tag {
+  @apply shrink-0 whitespace-nowrap rounded-full border border-line bg-paper-2 px-2 py-0.5 text-[10.5px] font-medium text-muted;
+}
+
+/* ── Confusion matrix ───────────────────────────────────── */
+.cm {
+  @apply grid items-stretch gap-1.5;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.cm__corner {
+  @apply block;
+}
+
+.cm__col-label,
+.cm__row-label {
+  @apply flex items-center text-[10px] font-semibold uppercase tracking-[0.05em] text-subtle;
+}
+
+.cm__col-label {
+  @apply justify-center pb-0.5 text-center;
+}
+
+.cm__row-label {
+  @apply pr-2 text-right;
+}
+
+.cm-cell {
+  @apply flex min-h-[82px] flex-col justify-between rounded-lg border p-2.5 text-left transition-shadow;
+}
+
+.cm-cell--correct {
+  @apply border-approved-line bg-approved-soft hover:border-approved/40;
+}
+
+.cm-cell--error {
+  @apply border-rejected-line bg-rejected-soft hover:border-rejected/40;
+}
+
+.cm-cell--selected {
+  @apply ring-2 ring-brand/50 ring-offset-1 ring-offset-surface;
+}
+
+.cm-cell__label {
+  @apply text-[10px] font-semibold uppercase leading-tight tracking-[0.04em] text-muted;
+}
+
+.cm-cell__value {
+  @apply mt-1 font-mono text-[19px] font-semibold leading-none text-ink sm:text-[21px];
+}
+
+.cm-cell__share {
+  @apply mt-1 text-[10px] text-subtle;
+}
+
+.cm-detail {
+  @apply mt-3 min-h-[46px] rounded-lg border border-line bg-paper-2 px-3 py-2 text-[11.5px] leading-relaxed text-muted;
+}
+
+.cm-metrics {
+  @apply mt-3 grid grid-cols-3 divide-x divide-line overflow-hidden rounded-lg border border-line bg-paper-2 text-center;
+}
+
+.cm-metrics dt {
+  @apply pt-2 text-[9.5px] font-semibold uppercase tracking-[0.06em] text-subtle;
+}
+
+.cm-metrics dd {
+  @apply pb-2 font-mono text-[13px] font-semibold text-ink;
+}
+
+.cm-footer {
+  @apply mt-3 flex flex-wrap items-center gap-2 text-[10.5px] leading-relaxed text-subtle;
+}
+
+.cm-footer__badge {
+  @apply rounded-full bg-brand-soft px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.06em] text-brand;
+}
+
+/* ── Calibration ────────────────────────────────────────── */
+.calib-overview {
+  @apply grid grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_132px];
+}
+
+.calib-formula {
+  @apply inline-block rounded-md border border-line bg-paper-2 px-2.5 py-2 font-mono text-[11.5px] leading-relaxed text-ink;
+}
+
+.calib-caption {
+  @apply mt-1.5 text-[10.5px] leading-relaxed text-subtle;
+}
+
+.calib-brier {
+  @apply mt-3 flex items-baseline gap-2;
+}
+
+.calib-brier__label {
+  @apply text-[9.5px] font-semibold uppercase tracking-[0.06em] text-subtle;
+}
+
+.calib-brier__value {
+  @apply font-mono text-[13px] font-semibold text-ink;
+}
+
+.calib-chart {
+  @apply h-auto w-full max-w-[132px] justify-self-center sm:justify-self-end;
+}
+
+.calib-chart__grid {
+  stroke: #e7e2d8;
+  stroke-width: 0.5;
+}
+
+.calib-chart__axis {
+  stroke: #d6cfc1;
+  stroke-width: 0.7;
+}
+
+.calib-chart__curve {
+  fill: none;
+  stroke: #1b3a57;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.calib-chart__tick {
+  fill: #8b94a0;
+  font-size: 5px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.calib-table {
+  @apply mt-4 w-full border-collapse text-[11.5px];
+}
+
+.calib-table th {
+  @apply whitespace-nowrap border-b border-line pb-1.5 text-left text-[9.5px] font-semibold uppercase tracking-[0.05em] text-subtle;
+}
+
+.calib-table td {
+  @apply border-b border-line/70 py-1.5 align-middle text-muted;
+}
+
+.calib-table tr:last-child td {
+  @apply border-b-0;
+}
+
+.calib-table__threshold {
+  @apply font-mono font-semibold text-ink;
+}
+
+.calib-table__share {
+  @apply flex items-center gap-2;
+}
+
+.calib-track {
+  @apply block h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-line/70 sm:w-20;
+}
+
+.calib-bar {
+  @apply block h-full rounded-full bg-brand/35;
+}
+
+.calib-table__num {
+  @apply whitespace-nowrap font-mono text-[11px] tabular-nums text-ink;
+}
+
+.calib-note {
+  @apply mt-3 flex items-start gap-1.5 rounded-lg border border-line bg-paper-2 px-2.5 py-2 text-[10.5px] leading-relaxed text-muted;
+}
+
+/* ── Audit table ────────────────────────────────────────── */
+.audit-panel {
+  @apply min-w-0;
+}
+
+.audit-scroll {
+  @apply mt-1 overflow-x-auto;
+}
+
+.audit-table {
+  @apply w-full min-w-[640px] border-collapse text-[12px];
+}
+
+.audit-table th {
+  @apply whitespace-nowrap border-b border-line pb-2 text-left text-[9.5px] font-semibold uppercase tracking-[0.06em] text-subtle;
+}
+
+.audit-table td {
+  @apply border-b border-line/70 py-2.5 align-middle;
+}
+
+.audit-table tbody tr {
+  @apply transition-colors hover:bg-paper-2/70;
+}
+
+.audit-table tbody tr:last-child td {
+  @apply border-b-0;
+}
+
+.audit-table__id {
+  @apply whitespace-nowrap font-mono text-[11.5px] font-medium text-ink;
+}
+
+.audit-table__time,
+.audit-table__officer {
+  @apply whitespace-nowrap text-muted;
+}
+
+.audit-table__officer {
+  @apply max-w-[190px] truncate;
+}
+
+.audit-table__num {
+  @apply text-right font-mono tabular-nums text-ink;
+}
+
+.audit-table th.audit-table__num {
+  @apply text-right;
+}
+
+.chip {
+  @apply inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10.5px] font-semibold;
+}
+
+.chip--approved {
+  @apply border-approved-line bg-approved-soft text-approved;
+}
+
+.chip--rejected {
+  @apply border-rejected-line bg-rejected-soft text-rejected;
+}
+
+.chip--review {
+  @apply border-review-line bg-review-soft text-review;
+}
+
+.chip--auto {
+  @apply border-line bg-paper-2 text-muted;
+}
+
+.audit-error {
+  @apply flex items-start gap-2 rounded-lg border border-rejected-line bg-rejected-soft px-3 py-2.5 text-[12px] text-rejected;
+}
+
+.audit-empty {
+  @apply flex items-start gap-2.5 rounded-lg border border-dashed border-line-strong bg-paper-2 px-4 py-5;
+}
+
+.audit-empty__title {
+  @apply text-[12.5px] font-semibold text-ink;
+}
+
+.audit-empty__text {
+  @apply mt-0.5 text-[11.5px] leading-relaxed text-muted;
+}
+
+.analytics-loading {
+  @apply flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface py-16 text-[12px] text-muted;
+}

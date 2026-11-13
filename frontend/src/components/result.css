@@ -1,227 +1,219 @@
 /* =========================================================
-   result.css — Result component styles
-   (Verdict banner, metric cards, risk meter, SHAP list)
+   result.css — Decision result panel
    ========================================================= */
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+.result-card {
+  @apply overflow-hidden rounded-xl border border-line bg-surface shadow-card;
 }
 
-/* ── Animate wrapper ────────────────────────────────────── */
-.result-root {
-  @apply space-y-4;
-  animation: fadeInUp 0.3s ease-out;
+/* ── Verdict head ───────────────────────────────────────── */
+.result-verdict {
+  @apply px-5 py-4 sm:px-6;
 }
 
-/* ── Executive Verdict Banner ───────────────────────────── */
-.verdict-banner {
-  @apply rounded-2xl border p-4 flex items-start gap-4 backdrop-blur;
+.result-verdict--approved {
+  @apply bg-approved-soft/70;
 }
 
-.verdict-banner--approved {
-  @apply bg-emerald-500/15 text-emerald-400 border-emerald-500/30;
+.result-verdict--review {
+  @apply bg-review-soft/70;
 }
 
-.verdict-banner--rejected {
-  @apply bg-rose-500/15 text-rose-400 border-rose-500/30;
+.result-verdict--rejected {
+  @apply bg-rejected-soft/70;
 }
 
-.verdict-banner--review {
-  @apply bg-amber-500/15 text-amber-400 border-amber-500/30;
+.result-verdict__head {
+  @apply mb-2 flex flex-wrap items-center justify-between gap-2;
 }
 
-.verdict-banner__icon-wrap {
-  @apply p-2.5 rounded-xl bg-slate-950/60 border border-current shrink-0;
+.result-verdict__chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold;
 }
 
-.verdict-banner__body {
-  @apply flex-1;
+.result-verdict--approved .result-verdict__chip {
+  @apply border-approved-line bg-surface text-approved;
 }
 
-.verdict-banner__header-row {
-  @apply flex items-center justify-between gap-2 flex-wrap mb-0.5;
+.result-verdict--review .result-verdict__chip {
+  @apply border-review-line bg-surface text-review;
 }
 
-.verdict-banner__title {
-  @apply text-lg font-black tracking-tight;
+.result-verdict--rejected .result-verdict__chip {
+  @apply border-rejected-line bg-surface text-rejected;
 }
 
-.verdict-banner__rating--prime {
-  @apply text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border uppercase text-emerald-400 bg-emerald-500/10 border-emerald-500/20;
+.result-verdict__meta {
+  @apply font-mono text-[10.5px] text-subtle;
 }
 
-.verdict-banner__rating--rejected {
-  @apply text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border uppercase text-rose-400 bg-rose-500/10 border-rose-500/20;
+.result-verdict__title {
+  @apply font-display text-[26px] leading-tight tracking-[-0.01em] text-ink;
 }
 
-.verdict-banner__rating--review {
-  @apply text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border uppercase text-amber-400 bg-amber-500/10 border-amber-500/20;
+.result-verdict__text {
+  @apply mt-1 max-w-[46ch] text-[12.5px] leading-relaxed text-muted;
 }
 
-.verdict-banner__subtitle {
-  @apply text-xs text-slate-300 opacity-90 leading-relaxed;
+/* ── Headline statistics ────────────────────────────────── */
+.result-stats {
+  @apply grid grid-cols-3 border-y border-line bg-paper-2/60;
 }
 
-.verdict-banner__meta-row {
-  @apply mt-2.5 flex items-center gap-3 text-[11px] text-slate-400;
+.result-stat {
+  @apply min-w-0 px-3 py-3.5 sm:px-5;
 }
 
-/* ── Key Metrics Grid (3 Cards) ─────────────────────────── */
-.metrics-grid {
-  @apply grid grid-cols-1 gap-3 sm:grid-cols-3;
+.result-stat + .result-stat {
+  @apply border-l border-line;
 }
 
-.metric-card {
-  @apply rounded-xl border border-slate-800 bg-slate-900/70 p-4 relative overflow-hidden backdrop-blur flex flex-col justify-between;
+.result-stat__label {
+  @apply text-[10.5px] font-semibold uppercase tracking-[0.07em] text-subtle;
 }
 
-.metric-card__header {
-  @apply flex items-center justify-between mb-1;
+.result-stat__value {
+  @apply mt-1 whitespace-nowrap font-mono text-[19px] font-semibold leading-none tracking-tight text-ink sm:text-[22px];
 }
 
-.metric-card__title {
-  @apply text-xs font-medium text-slate-400;
+.result-stat__note {
+  @apply mt-1.5 text-[10.5px] leading-snug text-muted;
 }
 
-.metric-card__value {
-  @apply text-2xl font-bold font-mono text-slate-100 tracking-tight;
-}
-
-.metric-card__footer {
-  @apply mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between;
-}
-
-.metric-card__sub {
-  @apply text-[11px] text-slate-400;
-}
-
-.metric-card__badge {
-  @apply text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700;
-}
-
-/* ── Calibrated Risk Spectrum Meter ─────────────────────── */
+/* ── Risk spectrum ──────────────────────────────────────── */
 .risk-meter {
-  @apply rounded-2xl border border-slate-800 bg-slate-900/70 p-4 backdrop-blur;
+  @apply px-5 pb-5 pt-4 sm:px-6;
 }
 
 .risk-meter__header {
-  @apply flex items-center justify-between mb-3;
+  @apply mb-3 flex flex-wrap items-baseline justify-between gap-2;
 }
 
 .risk-meter__title {
-  @apply text-xs font-bold uppercase tracking-wider text-slate-300;
+  @apply text-[12px] font-semibold text-ink;
 }
 
 .risk-meter__subtitle {
-  @apply text-[11px] text-slate-400;
+  @apply text-[11px] text-subtle;
 }
 
-.risk-meter__value-badge {
-  @apply text-xs font-mono font-bold text-slate-200 bg-slate-800 px-2 py-1 rounded border border-slate-700;
+.risk-meter__value {
+  @apply font-mono text-[11.5px] text-muted;
 }
 
 .risk-meter__track-wrap {
-  @apply relative pt-4 pb-2;
+  @apply relative py-1.5;
 }
 
 .risk-meter__track {
-  @apply relative h-3 w-full rounded-full overflow-hidden flex bg-slate-950 border border-slate-800;
+  @apply relative flex h-2 w-full overflow-hidden rounded-full;
 }
 
 .risk-meter__zone--approve {
-  @apply h-full bg-gradient-to-r from-emerald-600 to-emerald-500;
+  @apply h-full bg-approved-line;
+  width: 25%;
 }
 
 .risk-meter__zone--review {
-  @apply h-full bg-gradient-to-r from-amber-500 to-amber-600;
+  @apply h-full bg-review-line;
+  width: 25%;
 }
 
 .risk-meter__zone--reject {
-  @apply h-full bg-gradient-to-r from-rose-600 to-rose-700;
+  @apply h-full bg-rejected-line;
+  width: 50%;
 }
 
 .risk-meter__needle {
-  @apply absolute top-1 transform -translate-x-1/2 flex flex-col items-center transition-all duration-500;
-}
-
-.risk-meter__needle-bar {
-  @apply w-1.5 h-6 bg-white rounded-full shadow-lg ring-2 ring-indigo-500;
-}
-
-.risk-meter__needle-tip {
-  @apply w-2 h-2 bg-indigo-500 rotate-45 -mt-1;
+  @apply absolute -top-1 h-4 w-[3px] -translate-x-1/2 rounded-full bg-ink transition-[left] duration-500;
+  box-shadow: 0 0 0 2px #fff;
 }
 
 .risk-meter__legend {
-  @apply grid grid-cols-3 text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-800/80 mt-2;
+  @apply mt-2 flex items-center justify-between font-mono text-[10px] text-subtle;
 }
 
-.risk-meter__legend--approve {
-  @apply text-left text-emerald-400;
+.risk-meter__legend-left {
+  @apply text-left;
 }
 
-.risk-meter__legend--review {
-  @apply text-center text-amber-400;
+.risk-meter__legend-mid {
+  @apply text-center;
 }
 
-.risk-meter__legend--reject {
-  @apply text-right text-rose-400;
+.risk-meter__legend-right {
+  @apply text-right;
 }
 
-/* ── SHAP Reason Codes List ──────────────────────────────── */
-.shap-list {
-  @apply rounded-2xl border border-slate-800 bg-slate-900/70 p-4 backdrop-blur space-y-3;
+/* ── Model drivers ──────────────────────────────────────── */
+.drivers {
+  @apply border-t border-line px-5 py-4 sm:px-6;
 }
 
-.shap-list__header {
-  @apply flex items-center justify-between border-b border-slate-800 pb-2;
+.drivers__header {
+  @apply mb-3 flex flex-wrap items-baseline justify-between gap-2;
 }
 
-.shap-list__title {
-  @apply text-xs font-bold uppercase tracking-wider text-slate-200;
+.drivers__title {
+  @apply text-[12px] font-semibold text-ink;
 }
 
-.shap-list__subtitle {
-  @apply text-[11px] text-slate-400;
+.drivers__subtitle {
+  @apply text-[11px] text-subtle;
 }
 
-.shap-list__engine-badge {
-  @apply text-[10px] text-slate-400 font-mono bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700;
+.drivers__list {
+  @apply space-y-3;
 }
 
-.shap-list__items {
-  @apply space-y-2.5;
+.driver {
+  @apply space-y-1.5;
 }
 
-.shap-item {
-  @apply rounded-xl border border-slate-800/80 bg-slate-950/60 p-2.5 flex flex-col gap-1.5;
+.driver__row {
+  @apply flex items-baseline justify-between gap-3;
 }
 
-.shap-item__row {
-  @apply flex items-center justify-between text-xs;
+.driver__factor {
+  @apply min-w-0 truncate text-[12px] text-ink;
 }
 
-.shap-item__factor {
-  @apply font-semibold text-slate-200 truncate max-w-[200px];
+.driver__current {
+  @apply ml-1.5 font-mono text-[10.5px] text-subtle;
 }
 
-.shap-item__badge--raises {
-  @apply text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 text-rose-400 bg-rose-500/10 border-rose-500/20;
+.driver__effect {
+  @apply flex shrink-0 items-center gap-1 font-mono text-[10.5px] font-semibold;
 }
 
-.shap-item__badge--lowers {
-  @apply text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 text-emerald-400 bg-emerald-500/10 border-emerald-500/20;
+.driver__effect--raises {
+  @apply text-rejected;
 }
 
-.shap-item__bar-track {
-  @apply h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden;
+.driver__effect--lowers {
+  @apply text-approved;
 }
 
-.shap-item__bar--raises {
-  @apply h-full rounded-full bg-rose-500;
+.driver__track {
+  @apply h-1 w-full overflow-hidden rounded-full bg-paper-2;
 }
 
-.shap-item__bar--lowers {
-  @apply h-full rounded-full bg-emerald-500;
+.driver__fill {
+  @apply h-full rounded-full;
+}
+
+.driver__fill--raises {
+  @apply bg-rejected/70;
+}
+
+.driver__fill--lowers {
+  @apply bg-approved/70;
+}
+
+.drivers__empty {
+  @apply text-[12px] text-muted;
+}
+
+.result-footnote {
+  @apply border-t border-line bg-paper-2/60 px-5 py-3 text-[10.5px] leading-relaxed text-subtle sm:px-6;
 }

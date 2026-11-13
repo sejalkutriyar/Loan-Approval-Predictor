@@ -8,6 +8,12 @@ venv/
 *.pkl
 *.npy
 *.csv
+
+# Runtime model artifacts: the API cannot start without these, so keep them tracked.
+!app/models/*.pt
+!app/models/*.pkl
+!app/models/*.npy
+!app/models/*.csv
 .pytest_cache/
 .vscode/
 *.log

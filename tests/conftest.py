@@ -20,3 +20,19 @@ def override_auth_for_general_tests():
     yield
     app.dependency_overrides.clear()
 
+
+@pytest.fixture(autouse=True)
+def stub_application_persistence(monkeypatch):
+    """Keeps the test suite from writing benchmark applications into the real database."""
+    from app.routers import predict as predict_router
+
+    monkeypatch.setattr(
+        predict_router, "save_prediction_record", lambda *a, **k: "APP-TEST0001"
+    )
+    monkeypatch.setattr(
+        predict_router,
+        "save_prediction_records",
+        lambda items, *a, **k: [f"APP-TEST{i:04d}" for i in range(len(items))],
+    )
+
+

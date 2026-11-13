@@ -1,200 +1,253 @@
 /* =========================================================
-   app.css — Layout, Header, Footer & Preset Switcher styles
+   app.css — Shell, header, presets, workspace layout
    ========================================================= */
 
-/* ── Root Shell ─────────────────────────────────────────── */
+/* ── Root shell ─────────────────────────────────────────── */
 .app-shell {
-  @apply min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans;
+  @apply flex min-h-screen flex-col bg-paper text-ink font-sans;
 }
 
-/* ── Top Navigation Bar ─────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────── */
 .app-header {
-  @apply sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md px-4 lg:px-8 py-3;
+  @apply sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur-sm;
 }
 
 .app-header__inner {
-  @apply mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4;
+  @apply mx-auto flex h-16 max-w-[1240px] items-center justify-between gap-4 px-5 lg:px-8;
 }
 
-.app-header__logo-wrap {
-  @apply h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 p-0.5 shadow-lg shadow-indigo-500/20;
+.app-brand {
+  @apply flex min-w-0 items-center gap-2.5;
 }
 
-.app-header__logo-inner {
-  @apply h-full w-full rounded-[10px] bg-slate-950 flex items-center justify-center;
+.app-brand__mark {
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-brand text-white;
 }
 
-.app-header__brand-name {
-  @apply text-base font-extrabold tracking-tight text-white font-mono;
+.app-brand__text {
+  @apply flex min-w-0 flex-col leading-tight;
 }
 
-.app-header__enterprise-badge {
-  @apply text-indigo-400 font-sans font-semibold text-xs tracking-normal px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20;
+.app-brand__name {
+  @apply truncate text-[15px] font-semibold tracking-[-0.01em] text-ink;
 }
 
-.app-header__subtitle {
-  @apply text-[11px] text-slate-400 font-medium;
+.app-brand__sub {
+  @apply hidden truncate text-[11.5px] text-subtle xl:block;
 }
 
-.app-header__telemetry {
-  @apply hidden sm:flex items-center gap-3 text-xs;
+.app-header__actions {
+  @apply flex shrink-0 items-center gap-1.5 sm:gap-2;
 }
 
-.badge-connected {
-  @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[11px];
+.status-pill {
+  @apply hidden items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[11.5px] font-medium text-muted md:inline-flex;
 }
 
-.badge-connected__dot {
-  @apply w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse;
+.status-pill__dot {
+  @apply h-1.5 w-1.5 rounded-full;
 }
 
-.badge-pill {
-  @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 font-mono text-[11px];
+.status-pill--online .status-pill__dot {
+  @apply bg-approved;
 }
 
-/* ── Main Content Area ──────────────────────────────────── */
+.status-pill--offline .status-pill__dot {
+  @apply bg-rejected;
+}
+
+.header-button {
+  @apply inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium text-muted transition-colors hover:bg-brand-soft hover:text-brand;
+}
+
+.header-button--quiet {
+  @apply hover:bg-rejected-soft hover:text-rejected;
+}
+
+.header-user {
+  @apply hidden items-center gap-2 sm:flex;
+}
+
+.header-user__avatar {
+  @apply flex h-8 w-8 items-center justify-center rounded-full border border-brand/10 bg-brand-soft text-[11px] font-semibold text-brand;
+}
+
+.header-user__meta {
+  @apply flex flex-col leading-tight;
+}
+
+.header-user__name {
+  @apply max-w-[150px] truncate text-[12.5px] font-medium text-ink;
+}
+
+.header-user__role {
+  @apply text-[10px] font-semibold uppercase tracking-[0.08em] text-subtle;
+}
+
+/* ── Main content ───────────────────────────────────────── */
 .app-main {
-  @apply mx-auto max-w-7xl w-full px-4 lg:px-8 py-6 flex-1 space-y-6;
+  @apply mx-auto w-full max-w-[1240px] flex-1 space-y-5 px-5 py-6 lg:px-8;
 }
 
-/* ── Preset Profile Switcher Section ────────────────────── */
+/* ── Workspace view tabs ────────────────────────────────── */
+.view-tabs {
+  @apply inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-lg border border-line bg-paper-2 p-1;
+}
+
+.view-tab {
+  @apply inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[12.5px] font-medium text-muted transition-colors hover:text-ink;
+}
+
+.view-tab--active {
+  @apply bg-surface text-ink shadow-card;
+}
+
+/* ── Preset switcher ────────────────────────────────────── */
 .preset-section {
-  @apply rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-sm backdrop-blur;
+  @apply rounded-xl border border-line bg-surface p-4 shadow-card sm:p-5;
 }
 
 .preset-section__header {
-  @apply flex items-center justify-between gap-2 mb-3;
+  @apply mb-3 flex flex-wrap items-end justify-between gap-2;
 }
 
 .preset-section__title {
-  @apply text-xs font-bold uppercase tracking-wider text-slate-200;
+  @apply text-[13px] font-semibold text-ink;
 }
 
 .preset-section__subtitle {
-  @apply text-[11px] text-slate-400 font-mono hidden sm:inline;
+  @apply text-[12px] text-subtle;
 }
 
 .preset-grid {
-  @apply grid grid-cols-1 gap-3 sm:grid-cols-3;
+  @apply grid grid-cols-1 gap-2.5 sm:grid-cols-3;
 }
 
 .preset-card {
-  @apply relative text-left rounded-xl border p-3.5 transition-all border-slate-800 bg-slate-950/40 hover:border-slate-700 hover:bg-slate-900/40;
+  @apply flex flex-col gap-1 rounded-lg border border-line bg-surface p-3.5 text-left transition-colors hover:border-line-strong hover:bg-paper-2;
 }
 
 .preset-card--active {
-  @apply border-indigo-500 bg-gradient-to-br from-indigo-950/70 via-slate-900 to-slate-900 ring-1 ring-indigo-500;
+  @apply border-brand/50 bg-brand-soft/60 ring-1 ring-brand/10;
 }
 
 .preset-card__header {
-  @apply flex items-center justify-between mb-1.5;
+  @apply flex items-center justify-between gap-2;
 }
 
 .preset-card__label {
-  @apply text-xs font-bold text-slate-200 flex items-center gap-1.5;
+  @apply flex items-center gap-2 text-[12.5px] font-semibold text-ink;
 }
 
 .preset-card__dot--prime {
-  @apply w-2 h-2 rounded-full bg-emerald-400;
+  @apply h-1.5 w-1.5 rounded-full bg-approved;
 }
 
 .preset-card__dot--borderline {
-  @apply w-2 h-2 rounded-full bg-amber-400;
+  @apply h-1.5 w-1.5 rounded-full bg-review;
 }
 
 .preset-card__dot--high-risk {
-  @apply w-2 h-2 rounded-full bg-rose-400;
+  @apply h-1.5 w-1.5 rounded-full bg-rejected;
 }
 
 .preset-card__hint--prime {
-  @apply text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border text-emerald-400 bg-emerald-500/10 border-emerald-500/20;
+  @apply text-[10.5px] font-semibold uppercase tracking-[0.06em] text-approved;
 }
 
 .preset-card__hint--borderline {
-  @apply text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border text-amber-400 bg-amber-500/10 border-amber-500/20;
+  @apply text-[10.5px] font-semibold uppercase tracking-[0.06em] text-review;
 }
 
 .preset-card__hint--high-risk {
-  @apply text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border text-rose-400 bg-rose-500/10 border-rose-500/20;
+  @apply text-[10.5px] font-semibold uppercase tracking-[0.06em] text-rejected;
 }
 
-.preset-card__desc {
-  @apply text-[11px] text-slate-400 leading-tight;
+.preset-card__meta {
+  @apply font-mono text-[10.5px] text-subtle;
 }
 
-/* ── Dashboard Two-Column Grid ──────────────────────────── */
+/* ── Workspace ──────────────────────────────────────────── */
 .dashboard-grid {
-  @apply grid grid-cols-1 gap-6 lg:grid-cols-12 items-start;
+  @apply grid grid-cols-1 items-start gap-5 lg:grid-cols-12;
 }
 
 .dashboard-left {
-  @apply lg:col-span-7 space-y-4;
+  @apply min-w-0 lg:col-span-7;
 }
 
 .dashboard-right {
-  @apply lg:col-span-5 space-y-4 lg:sticky lg:top-20;
+  @apply min-w-0 space-y-4 lg:col-span-5;
 }
 
-/* ── Form Panel Wrapper ─────────────────────────────────── */
+/* ── Form panel ─────────────────────────────────────────── */
 .form-panel {
-  @apply rounded-2xl border border-slate-800 bg-slate-900/40 p-5 shadow-sm backdrop-blur;
+  @apply rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6;
 }
 
 .form-panel__header {
-  @apply flex items-center justify-between pb-3 mb-4 border-b border-slate-800;
+  @apply mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-line pb-4;
 }
 
 .form-panel__title {
-  @apply text-sm font-bold text-slate-100 flex items-center gap-2;
+  @apply text-[15px] font-semibold tracking-[-0.01em] text-ink;
 }
 
 .form-panel__subtitle {
-  @apply text-xs text-slate-400;
+  @apply mt-0.5 text-[12px] text-muted;
 }
 
 .form-panel__profile-badge {
-  @apply text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700;
+  @apply whitespace-nowrap rounded-md border border-line bg-paper-2 px-2 py-1 text-[11px] font-medium text-muted;
 }
 
-/* ── Inference Error Banner ─────────────────────────────── */
+/* ── Notices ────────────────────────────────────────────── */
 .error-banner {
-  @apply rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-300 flex items-start gap-3 backdrop-blur;
+  @apply flex items-start gap-2.5 rounded-lg border border-rejected-line bg-rejected-soft p-3.5 text-[12.5px] text-rejected;
 }
 
 .error-banner__title {
-  @apply font-bold mb-0.5;
+  @apply mb-0.5 font-semibold;
 }
 
-/* ── Standby / Empty State Panel ────────────────────────── */
+.stale-banner {
+  @apply flex items-start gap-2.5 rounded-lg border border-review-line bg-review-soft px-3.5 py-2.5 text-[12px] text-review;
+}
+
+/* ── Standby panel ──────────────────────────────────────── */
 .standby-panel {
-  @apply rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur space-y-5 text-center;
+  @apply space-y-4 rounded-xl border border-dashed border-line-strong bg-surface p-6 text-center sm:p-7;
 }
 
 .standby-panel__icon {
-  @apply mx-auto w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400;
+  @apply mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-brand-soft text-brand;
 }
 
 .standby-panel__title {
-  @apply text-sm font-bold text-slate-200;
+  @apply text-[14px] font-semibold text-ink;
 }
 
 .standby-panel__subtitle {
-  @apply text-xs text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed;
+  @apply mx-auto mt-1 max-w-sm text-[12.5px] leading-relaxed text-muted;
 }
 
 .pipeline-checklist {
-  @apply text-left rounded-xl border border-slate-800/80 bg-slate-950/60 p-3.5 space-y-2 text-xs font-mono text-slate-300;
+  @apply space-y-2.5 rounded-lg border border-line bg-paper-2 p-4 text-left text-[12px] text-muted;
 }
 
 .pipeline-checklist__item {
-  @apply flex items-center gap-2 text-slate-300;
+  @apply flex items-start gap-2.5;
+}
+
+.pipeline-checklist__dot {
+  @apply mt-1.5 h-1 w-1 shrink-0 rounded-full bg-subtle;
 }
 
 .pipeline-checklist__footer {
-  @apply pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono;
+  @apply flex items-center justify-between gap-3 border-t border-line pt-3 text-[11px] text-subtle;
 }
 
 /* ── Footer ─────────────────────────────────────────────── */
 .app-footer {
-  @apply border-t border-slate-800/60 bg-slate-950 py-4 px-4 text-center text-xs text-slate-400 font-mono;
+  @apply border-t border-line bg-paper px-5 py-5 text-center text-[11.5px] text-subtle;
 }

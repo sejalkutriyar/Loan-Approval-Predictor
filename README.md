@@ -9,7 +9,10 @@ AI-assisted decision-support system for loan officers — built with PyTorch, Fa
 
 ## Setup
 1. `pip install -r requirements.txt`
-2. See `notebooks/training_pipeline.ipynb` for model training reference
-3. See `implementation.md` for full implementation checklist and status
+2. Copy `.env.example` to `.env` and set `MONGODB_URI`, `DB_NAME` and `JWT_SECRET` (generate one with `python -c "import secrets; print(secrets.token_urlsafe(48))"`). `.env` must never be committed.
+3. Start the API: `uvicorn app.main:app --reload --port 8000` (docs at `/docs`).
+4. Start the UI: `cd frontend && npm install && npm run dev`.
+5. Sign in with a seeded account (created automatically at startup): officer `sejal / Sejal800`, admin `admin / Admin@123`.
+6. Run the tests: `python -m pytest -q`.
 
-See PRD for complete architecture and requirements.
+For model training details see `notebooks/training_pipeline.ipynb`; for the implementation checklist see `implementation.md`.

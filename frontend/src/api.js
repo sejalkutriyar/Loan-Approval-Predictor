@@ -1,4 +1,5 @@
 import axios from "axios";
+import { label } from "./fields.js";
 
 // Base URL points to FastAPI v1 endpoints
 const BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
@@ -31,25 +32,64 @@ client.interceptors.response.use(
 );
 
 function errMsg(e) {
-  if (e.response) {
-    const d = e.response.data?.detail;
-    if (e.response.status === 422 && Array.isArray(d)) {
-      return "Validation error: " + d.map((x) => `${(x.loc || []).slice(1).join(".")} (${x.msg})`).join("; ");
-    }
-    return `Server error ${e.response.status}: ${typeof d === "string" ? d : JSON.stringify(d)}`;
+  if (e.code === "ECONNABORTED") {
+    return "The request timed out. The model may still be warming up — please try again.";
   }
-  return "Cannot reach the API. Is the backend running on " + BASE + " ?";
+  if (!e.response) {
+    return "Cannot reach the prediction service. Check that the backend is running and try again.";
+  }
+  const status = e.response.status;
+  const detail = e.response.data?.detail;
+
+  if (status === 422 && Array.isArray(detail)) {
+    const parts = detail.slice(0, 3).map((d) => {
+      const field = (d.loc || []).filter((p) => p !== "body").join(".");
+      return `${field ? label(field) : "Request"} — ${d.msg}`;
+    });
+    return "Please review these fields: " + parts.join("; ") + ".";
+  }
+  if (typeof detail === "string") return detail;
+  if (status >= 500) {
+    return "The prediction service ran into a problem. Please try again in a moment.";
+  }
+  return `Request failed (HTTP ${status}).`;
+}
+
+// ---------------------------------------------------------------------------
+// Service health
+// ---------------------------------------------------------------------------
+export async function getHealth() {
+  const res = await client.get("/health");
+  return res.data;
 }
 
 // ---------------------------------------------------------------------------
 // Authentication & Profile Services
 // ---------------------------------------------------------------------------
+function persistSession({ access_token, user }) {
+  localStorage.setItem("jwt_token", access_token);
+  localStorage.setItem("jwt_user", JSON.stringify(user));
+}
+
 export async function login({ username, password }) {
   try {
     const res = await client.post("/auth/login", { username, password });
-    const { access_token, user } = res.data;
-    localStorage.setItem("jwt_token", access_token);
-    localStorage.setItem("jwt_user", JSON.stringify(user));
+    persistSession(res.data);
+    return res.data;
+  } catch (e) {
+    throw new Error(errMsg(e));
+  }
+}
+
+export async function register({ username, fullName, email, password }) {
+  try {
+    const res = await client.post("/auth/register", {
+      username,
+      full_name: fullName,
+      email,
+      password,
+    });
+    persistSession(res.data);
     return res.data;
   } catch (e) {
     throw new Error(errMsg(e));
@@ -92,6 +132,25 @@ export async function recourse(applicant) {
 export async function getFairnessReport() {
   try {
     return (await client.get("/fairness-report")).data;
+  } catch (e) {
+    throw new Error(errMsg(e));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Admin analytics & audit history
+// ---------------------------------------------------------------------------
+export async function getAdminMetrics() {
+  try {
+    return (await client.get("/admin/metrics")).data;
+  } catch (e) {
+    throw new Error(errMsg(e));
+  }
+}
+
+export async function getApplications({ limit = 20, skip = 0 } = {}) {
+  try {
+    return (await client.get("/applications", { params: { limit, skip } })).data;
   } catch (e) {
     throw new Error(errMsg(e));
   }

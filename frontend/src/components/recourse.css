@@ -1,114 +1,109 @@
 /* =========================================================
-   recourse.css — Counterfactual Recourse component styles
-   (DiCE Engine panel, strategy cards, apply button)
+   recourse.css — Improvement options panel
    ========================================================= */
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Recourse Panel ─────────────────────────────────────── */
 .recourse-panel {
-  @apply rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/40 via-slate-900/60 to-slate-900/90 p-4 backdrop-blur;
+  @apply rounded-xl border border-line bg-surface p-5 shadow-card sm:p-6;
 }
 
+/* ── Header ─────────────────────────────────────────────── */
 .recourse-panel__header {
-  @apply flex items-center justify-between gap-3 flex-wrap border-b border-indigo-500/20 pb-3;
+  @apply flex flex-wrap items-start justify-between gap-3;
 }
 
-.recourse-panel__icon-wrap {
-  @apply p-2 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400;
+.recourse-panel__intro {
+  @apply flex min-w-0 items-start gap-2;
+}
+
+.recourse-panel__icon {
+  @apply mt-[2px] shrink-0 text-brand;
 }
 
 .recourse-panel__title {
-  @apply text-xs font-bold uppercase tracking-wider text-indigo-200;
+  @apply text-[13px] font-semibold text-ink;
 }
 
 .recourse-panel__subtitle {
-  @apply text-[11px] text-slate-400;
+  @apply mt-0.5 max-w-[42ch] text-[11.5px] leading-relaxed text-subtle;
 }
 
-/* ── Run / Re-run Button ────────────────────────────────── */
 .btn-recourse {
-  @apply flex items-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-500 active:scale-95 transition-all disabled:opacity-50;
+  @apply inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-brand/20 bg-brand-soft px-3 py-2 text-[12px] font-semibold text-brand transition-colors hover:bg-brand/10 disabled:pointer-events-none disabled:opacity-60;
 }
 
-/* ── Error Notice ───────────────────────────────────────── */
 .recourse-error {
-  @apply mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400;
+  @apply mt-3 rounded-lg border border-rejected-line bg-rejected-soft px-3 py-2.5 text-[12px] text-rejected;
 }
 
-/* ── Results Container ──────────────────────────────────── */
+/* ── Results ────────────────────────────────────────────── */
 .recourse-results {
-  @apply mt-3.5 space-y-3;
-  animation: fadeIn 0.3s ease-out;
+  @apply mt-4 space-y-3 border-t border-line pt-4;
 }
 
-.recourse-message-bar {
-  @apply flex items-center justify-between text-xs text-indigo-300 bg-indigo-950/70 border border-indigo-500/20 px-3 py-2 rounded-xl;
+.recourse-message {
+  @apply rounded-lg border border-line bg-paper-2 px-3.5 py-2.5 text-[12px] leading-relaxed text-muted;
 }
 
-.recourse-message-bar__action {
-  @apply text-[10px] text-indigo-400 font-mono;
-}
-
-/* ── Strategy Cards Grid ────────────────────────────────── */
 .strategy-grid {
   @apply grid grid-cols-1 gap-3;
 }
 
 .strategy-card {
-  @apply rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-3 hover:border-indigo-500/40 transition-colors;
+  @apply rounded-lg border border-line bg-paper-2 p-3.5;
 }
 
 .strategy-card__header {
-  @apply flex items-center justify-between mb-2;
+  @apply mb-2.5 flex flex-wrap items-center justify-between gap-2;
 }
 
 .strategy-card__number {
-  @apply text-xs font-bold text-slate-200 flex items-center gap-1.5;
+  @apply flex items-center gap-2 text-[12.5px] font-semibold text-ink;
 }
 
 .strategy-card__number-badge {
-  @apply w-5 h-5 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-[11px] flex items-center justify-center font-mono;
+  @apply flex h-5 w-5 items-center justify-center rounded-full bg-brand-soft font-mono text-[10.5px] text-brand;
 }
 
 .strategy-card__new-risk {
-  @apply text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1;
+  @apply inline-flex items-center gap-1 rounded-full border border-approved-line bg-approved-soft px-2 py-0.5 font-mono text-[10.5px] font-semibold text-approved;
 }
 
-/* ── Change Rows inside a strategy ─────────────────────── */
 .strategy-changes {
-  @apply space-y-1.5 py-1;
+  @apply space-y-1.5;
 }
 
 .strategy-change-row {
-  @apply flex items-center justify-between gap-2 text-xs bg-slate-900/80 rounded-lg px-2.5 py-1.5 border border-slate-800/80;
+  @apply flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-line bg-surface px-2.5 py-1.5 text-[11.5px];
 }
 
 .strategy-change-row__feature {
-  @apply text-slate-400 font-medium truncate;
+  @apply min-w-0 truncate text-muted;
 }
 
 .strategy-change-row__values {
-  @apply flex items-center gap-2 font-mono shrink-0;
+  @apply flex shrink-0 items-center gap-1.5 font-mono;
 }
 
 .strategy-change-row__old {
-  @apply text-slate-500 line-through;
+  @apply text-subtle line-through;
+}
+
+.strategy-change-row__arrow {
+  @apply text-subtle;
 }
 
 .strategy-change-row__new {
-  @apply font-bold text-indigo-300 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-700/50;
+  @apply font-semibold text-ink;
 }
 
-/* ── Apply Strategy Button ──────────────────────────────── */
 .btn-apply-strategy {
-  @apply w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 px-3 py-2 text-xs font-bold text-emerald-300 transition-all hover:scale-[1.01] active:scale-[0.99];
+  @apply mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand/20 bg-surface px-3 py-2 text-[12px] font-semibold text-brand transition-colors hover:bg-brand-soft;
 }
 
-/* ── Disclaimer Note ────────────────────────────────────── */
+.strategy-empty {
+  @apply rounded-lg border border-dashed border-line-strong px-3.5 py-4 text-center text-[12px] text-muted;
+}
+
 .recourse-disclaimer {
-  @apply text-[10px] text-slate-500 leading-relaxed italic;
+  @apply text-[10.5px] leading-relaxed text-subtle;
 }

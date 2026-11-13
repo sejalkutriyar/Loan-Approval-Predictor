@@ -16,6 +16,7 @@ from app.services.inference_service import (
 )
 from app.services.application_service import (
     save_prediction_record,
+    save_prediction_records,
     get_recent_applications,
     get_application_by_id,
 )
@@ -53,9 +54,10 @@ def predict_batch(
     try:
         data_list = [app.model_dump() for app in applicants]
         batch_res = predict_batch_applicants(data_list)
-        # Persist batch items with IDs associated with current officer
-        for item, raw_app in zip(batch_res["predictions"], data_list):
-            app_id = save_prediction_record(raw_app, item, officer=current_user.full_name)
+        # Persist the whole batch in one round-trip, associated with the current officer.
+        items = list(zip(data_list, batch_res["predictions"]))
+        app_ids = save_prediction_records(items, officer=current_user.full_name)
+        for item, app_id in zip(batch_res["predictions"], app_ids):
             item["application_id"] = app_id
         return batch_res
     except Exception as e:

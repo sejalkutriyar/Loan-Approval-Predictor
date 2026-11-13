@@ -39,6 +39,13 @@ def _score(applicant_data: dict):
     return processed, model, calibrated_prob, float(uncertainty)
 
 
+def score_applicant(applicant_data: dict):
+    """Thread-safe calibrated probability + uncertainty, without SHAP or recourse."""
+    with _lock:
+        _, _, calibrated_prob, uncertainty = _score(applicant_data)
+    return calibrated_prob, uncertainty
+
+
 def predict_applicant(applicant_data: dict) -> dict:
     # One request at a time: MC Dropout, SHAP and DiCE all use the shared model.
     with _lock:

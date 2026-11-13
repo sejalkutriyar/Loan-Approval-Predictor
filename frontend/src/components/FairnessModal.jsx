@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   ShieldAlert,
   Scale,
@@ -6,156 +6,225 @@ import {
   AlertTriangle,
   X,
   Info,
-  Layers,
 } from "lucide-react";
 
+const fmtTimestamp = (iso) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+};
+
 export default function FairnessModal({ isOpen, onClose, report, loading, error }) {
+  const panelRef = useRef(null);
+  const closeRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previous = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const focusables = () =>
+      Array.from(
+        panelRef.current?.querySelectorAll(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) || []
+      );
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const nodes = focusables();
+      if (!nodes.length) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    const focusTimer = window.setTimeout(() => closeRef.current?.focus(), 0);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      window.clearTimeout(focusTimer);
+      if (previous && typeof previous.focus === "function") previous.focus();
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
+  const parity = report?.demographic_parity;
+  const scores = report?.score_distribution;
+  const passed = parity?.eeoc_rule_passed;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/50">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              <Scale size={20} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                Responsible AI &amp; Algorithmic Fairness Audit
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                  ECOA / EEOC
-                </span>
+    <div
+      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-[2px]"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fairness-title"
+        className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-pop"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+          <div className="flex min-w-0 items-start gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <Scale size={16} strokeWidth={1.75} />
+            </span>
+            <div className="min-w-0">
+              <h3 id="fairness-title" className="text-[14px] font-semibold text-ink">
+                Fairness and audit
               </h3>
-              <p className="text-xs text-slate-400">
-                Disparate Impact &amp; Demographic Parity Audit across Sensitive Attributes
+              <p className="mt-0.5 text-[11.5px] text-muted">
+                Gender parity across the benchmark cohort · ECOA / EEOC four-fifths rule
               </p>
             </div>
           </div>
           <button
+            ref={closeRef}
+            type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            aria-label="Close fairness report"
+            className="rounded-md p-1.5 text-muted transition-colors hover:bg-paper-2 hover:text-ink"
           >
-            <X size={18} />
+            <X size={17} />
           </button>
         </div>
 
-        {/* Content Body */}
-        <div className="max-h-[75vh] overflow-y-auto p-6 space-y-5 text-sm text-slate-200">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 text-[12.5px] sm:px-6">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-              <p className="text-xs text-slate-400">Evaluating cohort fairness across protected attributes...</p>
+            <div className="flex flex-col items-center justify-center gap-3 py-12">
+              <span className="h-7 w-7 animate-spin rounded-full border-2 border-brand/25 border-t-brand" />
+              <p className="text-[11.5px] text-muted">Scoring the benchmark cohort…</p>
             </div>
           )}
 
           {error && (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex gap-2">
-              <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 rounded-lg border border-rejected-line bg-rejected-soft px-3 py-2.5 text-[12px] text-rejected">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {!loading && report && (
             <>
-              {/* Four-Fifths / Demographic Parity Status Banner */}
               <div
-                className={`p-4 rounded-xl border flex items-start gap-3.5 ${
-                  report.demographic_parity.eeoc_rule_passed
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-                    : "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                className={`flex items-start gap-2.5 rounded-lg border px-3.5 py-3 ${
+                  passed
+                    ? "border-approved-line bg-approved-soft text-approved"
+                    : "border-review-line bg-review-soft text-review"
                 }`}
               >
-                {report.demographic_parity.eeoc_rule_passed ? (
-                  <CheckCircle2 size={22} className="shrink-0 mt-0.5 text-emerald-400" />
+                {passed ? (
+                  <CheckCircle2 size={17} className="mt-0.5 shrink-0" />
                 ) : (
-                  <AlertTriangle size={22} className="shrink-0 mt-0.5 text-amber-400" />
+                  <AlertTriangle size={17} className="mt-0.5 shrink-0" />
                 )}
-                <div className="space-y-1">
-                  <div className="font-semibold text-sm flex items-center gap-2">
-                    {report.demographic_parity.eeoc_rule_passed
-                      ? "80% Four-Fifths Rule Satisfied (Non-Discriminatory)"
-                      : "Borderline Parity Disparity Detected"}
-                    <span className="text-xs px-2 py-0.2 rounded font-mono font-bold bg-slate-950/40">
-                      Ratio: {(report.demographic_parity.disparate_impact_ratio * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <p className="text-xs opacity-90 leading-relaxed">
-                    {report.recommendation}
+                <div>
+                  <p className="text-[12.5px] font-semibold">
+                    {passed
+                      ? "Four-fifths rule satisfied"
+                      : "Disparate impact below the 80% threshold"}
+                  </p>
+                  <p className="mt-1 leading-relaxed opacity-90">{report.recommendation}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                <div className="rounded-lg border border-line bg-paper-2 px-3.5 py-3">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-subtle">
+                    Female approval rate
+                  </p>
+                  <p className="mt-1 font-mono text-[19px] font-semibold text-ink">
+                    {(parity.female_approval_rate * 100).toFixed(1)}%
+                  </p>
+                  <p className="mt-1 text-[10.5px] text-muted">
+                    Avg default p:{" "}
+                    {(scores.average_female_default_probability * 100).toFixed(1)}%
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-line bg-paper-2 px-3.5 py-3">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-subtle">
+                    Male approval rate
+                  </p>
+                  <p className="mt-1 font-mono text-[19px] font-semibold text-ink">
+                    {(parity.male_approval_rate * 100).toFixed(1)}%
+                  </p>
+                  <p className="mt-1 text-[10.5px] text-muted">
+                    Avg default p:{" "}
+                    {(scores.average_male_default_probability * 100).toFixed(1)}%
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-line bg-paper-2 px-3.5 py-3">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-subtle">
+                    Disparate impact ratio
+                  </p>
+                  <p
+                    className={`mt-1 font-mono text-[19px] font-semibold ${
+                      passed ? "text-approved" : "text-review"
+                    }`}
+                  >
+                    {(parity.disparate_impact_ratio * 100).toFixed(1)}%
+                  </p>
+                  <p className="mt-1 text-[10.5px] text-muted">
+                    Required: ≥ {(parity.eeoc_four_fifths_threshold * 100).toFixed(0)}%
                   </p>
                 </div>
               </div>
 
-              {/* Parity Metrics Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/40">
-                  <span className="text-[11px] text-slate-400 uppercase tracking-wider block mb-1">
-                    Female Approval Rate
-                  </span>
-                  <div className="text-xl font-bold font-mono text-emerald-400">
-                    {(report.demographic_parity.female_approval_rate * 100).toFixed(1)}%
-                  </div>
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    Avg default p: {(report.score_distribution.average_female_default_probability * 100).toFixed(1)}%
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/40">
-                  <span className="text-[11px] text-slate-400 uppercase tracking-wider block mb-1">
-                    Male Approval Rate
-                  </span>
-                  <div className="text-xl font-bold font-mono text-indigo-400">
-                    {(report.demographic_parity.male_approval_rate * 100).toFixed(1)}%
-                  </div>
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    Avg default p: {(report.score_distribution.average_male_default_probability * 100).toFixed(1)}%
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/40">
-                  <span className="text-[11px] text-slate-400 uppercase tracking-wider block mb-1">
-                    EEOC Benchmark Threshold
-                  </span>
-                  <div className="text-xl font-bold font-mono text-white">
-                    80.0%
-                  </div>
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    Four-Fifths Rule Requirement
-                  </span>
-                </div>
-              </div>
-
-              {/* Responsible AI Safeguards Accordion / Box */}
-              <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldAlert size={14} className="text-indigo-400" />
-                  Active Model Governance &amp; Compliance Safeguards
+              <div className="space-y-2">
+                <h4 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                  <ShieldAlert size={13} className="text-brand" />
+                  Model safeguards
                 </h4>
 
-                <div className="space-y-2">
-                  <div className="p-3 rounded-xl border border-slate-800 bg-slate-950/60 flex items-start gap-2.5">
-                    <CheckCircle2 size={16} className="text-indigo-400 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-semibold text-slate-200">
-                        Shielded Explainability (SHAP Filtering)
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        <code className="text-indigo-300">CODE_GENDER</code> is strictly excluded from SHAP reason codes. The system never blames gender for a loan denial or manual review referral.
-                      </p>
-                    </div>
+                <div className="flex items-start gap-2.5 rounded-lg border border-line bg-paper-2 px-3.5 py-3">
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-brand" />
+                  <div>
+                    <p className="text-[12px] font-medium text-ink">
+                      Gender is excluded from explanations
+                    </p>
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                      Gender never appears in the reason codes shown to a credit officer, so it
+                      can never be cited as the cause of a decline.
+                    </p>
                   </div>
+                </div>
 
-                  <div className="p-3 rounded-xl border border-slate-800 bg-slate-950/60 flex items-start gap-2.5">
-                    <CheckCircle2 size={16} className="text-indigo-400 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-semibold text-slate-200">
-                        Immutable Counterfactual Constraints (DiCE)
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Algorithmic recourse prevents proposing changes to immutable demographic attributes (Age, Gender). Only financial levers (loan amount, credit bureau enhancement) are generated.
-                      </p>
-                    </div>
+                <div className="flex items-start gap-2.5 rounded-lg border border-line bg-paper-2 px-3.5 py-3">
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-brand" />
+                  <div>
+                    <p className="text-[12px] font-medium text-ink">
+                      Improvement options only use changeable factors
+                    </p>
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                      Recommendations cover loan terms and bureau scores. Age and gender are
+                      never proposed as changes.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -163,20 +232,23 @@ export default function FairnessModal({ isOpen, onClose, report, loading, error 
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-slate-800 px-6 py-3 bg-slate-950/80 flex items-center justify-between text-xs text-slate-400">
-          <span className="flex items-center gap-1">
-            <Info size={13} /> Cohort Size: {report?.cohort_size || 15} benchmark test profiles
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-paper-2/60 px-5 py-3 text-[11px] text-subtle sm:px-6">
+          <span className="flex items-center gap-1.5">
+            <Info size={13} />
+            {report?.cohort_size ? `${report.cohort_size} benchmark profiles` : "Benchmark cohort"}
+            {report?.audit_timestamp ? ` · ${fmtTimestamp(report.audit_timestamp)}` : ""}
           </span>
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
+            className="rounded-lg border border-line bg-surface px-3.5 py-1.5 text-[12px] font-medium text-ink transition-colors hover:bg-paper-2"
           >
-            Close Report
+            Close
           </button>
         </div>
       </div>
     </div>
   );
 }
+
 

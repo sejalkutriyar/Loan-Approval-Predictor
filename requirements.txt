@@ -7,3 +7,15 @@ uvicorn
 pydantic
 shap
 dice-ml
+pymongo
+motor
+PyJWT
+bcrypt
+joblib
+
+# Optional: detailed health telemetry
+psutil
+
+# Test suite
+pytest
+httpx

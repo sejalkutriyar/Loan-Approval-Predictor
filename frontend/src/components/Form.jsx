@@ -1,67 +1,121 @@
 import React, { useState } from "react";
 import {
   ChevronDown,
-  ChevronUp,
   CreditCard,
   Briefcase,
   Activity,
   UserCheck,
   FileSpreadsheet,
   Search,
-  Sparkles,
+  Loader2,
+  ArrowRight,
 } from "lucide-react";
 import {
   PRIMARY_KEYS,
   INCOME_TYPES,
   EDUCATION_TYPES,
   HOUSING_TYPES,
+  ENUMS,
+  BINARY_KEYS,
   label,
-  inrLakhWords,
+  inrCompact,
   getCreditScoreTier,
 } from "../fields.js";
 import "./form.css";
 
-function FormSectionHeader({ icon: Icon, title, subtitle }) {
+function SectionHeader({ icon: Icon, title, subtitle }) {
   return (
     <div className="form-section-header">
-      <div className="form-section-header__icon-wrap">
-        <Icon size={16} />
-      </div>
+      <Icon size={15} strokeWidth={1.75} className="form-section-header__icon" />
       <div>
         <h3 className="form-section-header__title">{title}</h3>
-        {subtitle && (
-          <p className="form-section-header__subtitle">{subtitle}</p>
+        {subtitle && <p className="form-section-header__subtitle">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+function MoneyInput({ id, labelText, value, onChange }) {
+  const suffix = inrCompact(value);
+  return (
+    <div className="form-field">
+      <label className="form-label" htmlFor={id}>
+        {labelText}
+      </label>
+      <div className="input-affix">
+        <span className="input-affix__prefix" aria-hidden="true">
+          ₹
+        </span>
+        <input
+          id={id}
+          type="number"
+          min={0}
+          step="any"
+          inputMode="numeric"
+          placeholder="0"
+          value={Number.isFinite(value) ? value : ""}
+          onChange={(e) => onChange(e.target.value === "" ? NaN : Number(e.target.value))}
+          className={`form-input form-input--money${suffix ? " form-input--suffix" : ""}`}
+        />
+        {suffix && (
+          <span className="input-affix__suffix" aria-hidden="true">
+            {suffix}
+          </span>
         )}
       </div>
     </div>
   );
 }
 
-function MoneyInput({ labelText, value, onChange, placeholder = "0" }) {
-  const lakhText = inrLakhWords(value);
+function SelectField({ id, labelText, value, onChange, options }) {
+  const list = options.includes(value) ? options : [value, ...options];
   return (
-    <div className="flex flex-col">
-      <div className="form-label-row">
-        <label className="form-label">{labelText}</label>
-        {lakhText && (
-          <span className="money-input__lakh-badge">{lakhText}</span>
-        )}
+    <div className="form-field">
+      <label className="form-label" htmlFor={id}>
+        {labelText}
+      </label>
+      <div className="select-wrap">
+        <select
+          id={id}
+          className="form-select"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        >
+          {list.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="money-input__wrap">
-        <div className="money-input__prefix">
-          <span className="money-input__currency">₹</span>
-        </div>
+    </div>
+  );
+}
+
+function YearsField({ id, labelText, value, onChange, min, max, step = 1, placeholder }) {
+  return (
+    <div className="form-field">
+      <label className="form-label" htmlFor={id}>
+        {labelText}
+      </label>
+      <div className="input-affix">
         <input
+          id={id}
           type="number"
-          min={0}
-          step="any"
-          placeholder={placeholder}
+          min={min}
+          max={max}
+          step={step}
           value={Number.isFinite(value) ? value : ""}
-          onChange={(e) =>
-            onChange(e.target.value === "" ? NaN : Number(e.target.value))
-          }
-          className="money-input__field"
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            onChange(e.target.value === "" ? NaN : val);
+          }}
+          placeholder={placeholder}
+          className="form-input form-input--suffix"
         />
+        <span className="input-affix__suffix" aria-hidden="true">
+          years
+        </span>
       </div>
     </div>
   );
@@ -72,18 +126,17 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
   const [bgFilter, setBgFilter] = useState("");
 
   const ageYears = Math.round(Math.abs(applicant.DAYS_BIRTH) / 365);
-  const empYears =
-    Math.round((Math.abs(applicant.DAYS_EMPLOYED) / 365) * 10) / 10;
+  const empYears = Number((Math.abs(applicant.DAYS_EMPLOYED) / 365).toFixed(1));
 
-  const restKeys = Object.keys(applicant).filter(
-    (k) => !PRIMARY_KEYS.includes(k)
-  );
+  const restKeys = Object.keys(applicant).filter((k) => !PRIMARY_KEYS.includes(k));
 
+  const query = bgFilter.trim().toLowerCase();
   const filteredRestKeys = restKeys.filter(
-    (k) =>
-      k.toLowerCase().includes(bgFilter.toLowerCase()) ||
-      label(k).toLowerCase().includes(bgFilter.toLowerCase())
+    (k) => k.toLowerCase().includes(query) || label(k).toLowerCase().includes(query)
   );
+
+  const setYears = (key, years) =>
+    setField(key, Number.isFinite(years) ? Math.round(-years * 365) : NaN);
 
   return (
     <form
@@ -91,111 +144,78 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
         e.preventDefault();
         onSubmit();
       }}
-      className="space-y-6"
+      className="form"
     >
-      {/* 1. Credit Facility Request */}
       <section className="form-section">
-        <FormSectionHeader
+        <SectionHeader
           icon={CreditCard}
-          title="Loan Request"
-          subtitle="Requested loan amount, EMI, and asset/purchase value"
+          title="Loan request"
+          subtitle="Amount requested, repayment instalment and asset value."
         />
         <div className="form-grid-3">
           <MoneyInput
-            labelText="Loan Amount"
+            id="amt-credit"
+            labelText="Loan amount"
             value={applicant.AMT_CREDIT}
             onChange={(v) => setField("AMT_CREDIT", v)}
           />
           <MoneyInput
-            labelText="Annual EMI / Annuity"
+            id="amt-annuity"
+            labelText="Annual EMI / annuity"
             value={applicant.AMT_ANNUITY}
             onChange={(v) => setField("AMT_ANNUITY", v)}
           />
           <MoneyInput
-            labelText="Asset / Goods Price"
+            id="amt-goods"
+            labelText="Goods / asset price"
             value={applicant.AMT_GOODS_PRICE}
             onChange={(v) => setField("AMT_GOODS_PRICE", v)}
           />
         </div>
       </section>
 
-      {/* 2. Income & Employment */}
       <section className="form-section">
-        <FormSectionHeader
+        <SectionHeader
           icon={Briefcase}
-          title="Income & Work Details"
-          subtitle="Applicant earnings, job type, and work experience"
+          title="Income and employment"
+          subtitle="Earnings, income type and time in the current job."
         />
         <div className="form-grid-3">
           <MoneyInput
-            labelText="Total Annual Income"
+            id="amt-income"
+            labelText="Annual income"
             value={applicant.AMT_INCOME_TOTAL}
             onChange={(v) => setField("AMT_INCOME_TOTAL", v)}
           />
-
-          <div>
-            <label className="form-label mb-1 block">Income Category</label>
-            <select
-              value={applicant.NAME_INCOME_TYPE}
-              onChange={(e) => setField("NAME_INCOME_TYPE", e.target.value)}
-              className="form-select"
-            >
-              {INCOME_TYPES.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <div className="form-label-row">
-              <label className="form-label">Work Experience</label>
-              <span className="form-label-hint">(in current job)</span>
-            </div>
-            <div className="form-input--suffix-wrap">
-              <input
-                type="number"
-                min={0}
-                max={50}
-                step="0.1"
-                value={Number.isFinite(empYears) ? empYears : ""}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setField(
-                    "DAYS_EMPLOYED",
-                    Number.isFinite(val) ? Math.round(-val * 365) : NaN
-                  );
-                }}
-                className="form-input"
-              />
-              <div className="form-input--suffix">
-                <span className="form-input--suffix-text">Years</span>
-              </div>
-            </div>
-          </div>
+          <SelectField
+            id="income-type"
+            labelText="Income type"
+            value={applicant.NAME_INCOME_TYPE}
+            onChange={(v) => setField("NAME_INCOME_TYPE", v)}
+            options={INCOME_TYPES}
+          />
+          <YearsField
+            id="work-years"
+            labelText="Time in current job"
+            value={empYears}
+            min={0}
+            max={60}
+            step={0.1}
+            onChange={(v) => setYears("DAYS_EMPLOYED", v)}
+          />
         </div>
       </section>
 
-      {/* 3. External Bureau Ratings (EXT_SOURCE) */}
       <section className="form-section">
-        <FormSectionHeader
+        <SectionHeader
           icon={Activity}
-          title="Credit Bureau Scores (CIBIL / Experian)"
-          subtitle="Normalized credit scores (0.00 = Poor, 1.00 = Excellent)"
+          title="Credit bureau scores"
+          subtitle="Normalised bureau feeds: 0.00 poor, 1.00 excellent."
         />
         <div className="form-grid-2">
           {[
-            {
-              key: "EXT_SOURCE_2",
-              name: "CIBIL / Equifax Score",
-              source: "Credit Bureau Feed 1 (0.0 to 1.0)",
-            },
-            {
-              key: "EXT_SOURCE_3",
-              name: "Experian / CRIF Score",
-              source: "Credit Bureau Feed 2 (0.0 to 1.0)",
-            },
+            { key: "EXT_SOURCE_2", name: "Bureau score 1", source: "CIBIL / Equifax" },
+            { key: "EXT_SOURCE_3", name: "Bureau score 2", source: "Experian / CRIF" },
           ].map(({ key, name, source }) => {
             const score = Number(applicant[key]) || 0;
             const tier = getCreditScoreTier(score);
@@ -204,11 +224,7 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
                 <div>
                   <div className="ext-score-card__header">
                     <span className="ext-score-card__name">{name}</span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.color}`}
-                    >
-                      {tier.text}
-                    </span>
+                    <span className={`ext-score-card__tier ${tier.color}`}>{tier.text}</span>
                   </div>
                   <p className="ext-score-card__source">{source}</p>
                 </div>
@@ -221,21 +237,18 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
                       max="1"
                       step="0.01"
                       value={score}
-                      onChange={(e) =>
-                        setField(key, parseFloat(e.target.value))
-                      }
+                      aria-label={`${name} (${source})`}
+                      onChange={(e) => setField(key, parseFloat(e.target.value))}
                       className="ext-score-card__range"
                     />
                     <div className="ext-score-card__value-box">
-                      <span className="ext-score-card__value">
-                        {score.toFixed(2)}
-                      </span>
+                      <span className="ext-score-card__value">{score.toFixed(2)}</span>
                     </div>
                   </div>
-                  <div className="ext-score-card__scale">
-                    <span>0.00 (Poor)</span>
+                  <div className="ext-score-card__scale" aria-hidden="true">
+                    <span>0.00</span>
                     <span>0.50</span>
-                    <span>1.00 (Prime)</span>
+                    <span>1.00</span>
                   </div>
                 </div>
               </div>
@@ -244,158 +257,156 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
         </div>
       </section>
 
-      {/* 4. Applicant Profile & Demographics */}
       <section className="form-section">
-        <FormSectionHeader
+        <SectionHeader
           icon={UserCheck}
-          title="Applicant Profile & Demographics"
-          subtitle="Education, residential status, and legal age qualifications"
+          title="Applicant profile"
+          subtitle="Age, education and housing situation."
         />
         <div className="form-grid-3">
-          <div>
-            <div className="form-label-row">
-              <label className="form-label">Age</label>
-              <span className="form-label-hint">(Negative days internally)</span>
-            </div>
-            <div className="form-input--suffix-wrap">
-              <input
-                type="number"
-                min={18}
-                max={90}
-                step="1"
-                value={Number.isFinite(ageYears) ? ageYears : ""}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setField(
-                    "DAYS_BIRTH",
-                    Number.isFinite(val) ? Math.round(-val * 365) : NaN
-                  );
-                }}
-                className="form-input"
-              />
-              <div className="form-input--suffix">
-                <span className="form-input--suffix-text">Yrs</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="sm:col-span-1">
-            <label className="form-label mb-1 block">Education Level</label>
-            <select
-              value={applicant.NAME_EDUCATION_TYPE}
-              onChange={(e) =>
-                setField("NAME_EDUCATION_TYPE", e.target.value)
-              }
-              className="form-select--sm"
-            >
-              {EDUCATION_TYPES.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="sm:col-span-1">
-            <label className="form-label mb-1 block">Residential Status</label>
-            <select
-              value={applicant.NAME_HOUSING_TYPE}
-              onChange={(e) => setField("NAME_HOUSING_TYPE", e.target.value)}
-              className="form-select--sm"
-            >
-              {HOUSING_TYPES.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </div>
+          <YearsField
+            id="age-years"
+            labelText="Age"
+            value={ageYears}
+            min={18}
+            max={100}
+            onChange={(v) => setYears("DAYS_BIRTH", v)}
+          />
+          <SelectField
+            id="education"
+            labelText="Education"
+            value={applicant.NAME_EDUCATION_TYPE}
+            onChange={(v) => setField("NAME_EDUCATION_TYPE", v)}
+            options={EDUCATION_TYPES}
+          />
+          <SelectField
+            id="housing"
+            labelText="Housing"
+            value={applicant.NAME_HOUSING_TYPE}
+            onChange={(v) => setField("NAME_HOUSING_TYPE", v)}
+            options={HOUSING_TYPES}
+          />
         </div>
       </section>
 
-      {/* 5. Background Data Annex (60 Fields) */}
       <section className="annex-section">
         <button
           type="button"
           onClick={() => setOpen(!open)}
           className="annex-toggle"
+          aria-expanded={open}
+          aria-controls="annex-body"
         >
-          <div className="annex-toggle__label">
-            <FileSpreadsheet size={15} className="text-slate-400" />
-            <span>
-              Underwriting Data Annex ({restKeys.length} Background Audit Parameters)
-            </span>
+          <span className="annex-toggle__label">
+            <FileSpreadsheet size={15} strokeWidth={1.75} className="shrink-0 text-brand" />
+            <span className="truncate">Background data</span>
             <span className="annex-toggle__meta">
-              (Pre-filled from training distribution • 0 missing values)
+              · {restKeys.length} remaining fields, pre-filled from the dataset
             </span>
-          </div>
-          <div className="annex-toggle__action">
-            <span className="annex-toggle__action-text">{open ? "Hide" : "Inspect"}</span>
-            {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </div>
+          </span>
+          <span className="annex-toggle__action">
+            {open ? "Hide" : "Review"}
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </span>
         </button>
 
         {open && (
-          <div className="annex-body">
+          <div className="annex-body" id="annex-body">
             <div className="annex-search-wrap">
-              <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
+              <Search size={14} className="annex-search__icon" />
               <input
                 type="text"
-                placeholder="Search background parameters (e.g. DOCUMENT, RATING, SOCIAL, REGION)..."
+                placeholder="Search fields, e.g. document, region, social"
                 value={bgFilter}
                 onChange={(e) => setBgFilter(e.target.value)}
                 className="annex-search"
+                aria-label="Search background fields"
               />
             </div>
 
-            <div className="annex-fields-grid">
-              {filteredRestKeys.map((k) => (
-                <div key={k} className="annex-field-card">
-                  <label
-                    className="annex-field-label"
-                    title={k}
-                  >
-                    {label(k)}
-                  </label>
-                  {typeof applicant[k] === "number" ? (
-                    <input
-                      type="number"
-                      step="any"
-                      value={applicant[k]}
-                      onChange={(e) => setField(k, Number(e.target.value))}
-                      className="annex-field-input"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={applicant[k]}
-                      onChange={(e) => setField(k, e.target.value)}
-                      className="annex-field-text"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+            {filteredRestKeys.length === 0 ? (
+              <p className="annex-empty">No fields match “{bgFilter}”.</p>
+            ) : (
+              <div className="annex-fields-grid">
+                {filteredRestKeys.map((k) => {
+                  const value = applicant[k];
+                  const enumOptions = ENUMS[k];
+                  const id = `annex-${k}`;
+                  return (
+                    <div key={k} className="annex-field">
+                      <label className="annex-field-label" htmlFor={id} title={label(k)}>
+                        {label(k)}
+                      </label>
+                      {enumOptions ? (
+                        <select
+                          id={id}
+                          className="annex-field-select"
+                          value={value}
+                          onChange={(e) => setField(k, e.target.value)}
+                        >
+                          {(enumOptions.includes(value) ? enumOptions : [value, ...enumOptions]).map(
+                            (o) => (
+                              <option key={o} value={o}>
+                                {o}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      ) : BINARY_KEYS.has(k) ? (
+                        <select
+                          id={id}
+                          className="annex-field-select"
+                          value={Number(value) === 1 ? "1" : "0"}
+                          onChange={(e) => setField(k, Number(e.target.value))}
+                        >
+                          <option value="1">Yes</option>
+                          <option value="0">No</option>
+                        </select>
+                      ) : typeof value === "number" ? (
+                        <input
+                          id={id}
+                          type="number"
+                          step="any"
+                          value={Number.isFinite(value) ? value : ""}
+                          onChange={(e) =>
+                            setField(k, e.target.value === "" ? NaN : Number(e.target.value))
+                          }
+                          className="annex-field-input"
+                        />
+                      ) : (
+                        <input
+                          id={id}
+                          type="text"
+                          value={value ?? ""}
+                          onChange={(e) => setField(k, e.target.value)}
+                          className="annex-field-input"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </section>
 
-      {/* 6. Primary Action CTA Button */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="group btn-submit"
-      >
-        <Sparkles
-          size={18}
-          className={loading ? "animate-spin" : "transition-transform group-hover:scale-110"}
-        />
-        <span>
-          {loading
-            ? "Running Neural Inference (50 Passes + SHAP)..."
-            : "Run AI Underwriting Assessment"}
-        </span>
-      </button>
+      <div>
+        <button type="submit" disabled={loading} className="btn-submit">
+          {loading ? (
+            <Loader2 size={17} className="animate-spin" />
+          ) : (
+            <ArrowRight size={17} strokeWidth={2} />
+          )}
+          {loading ? "Assessing application…" : "Run assessment"}
+        </button>
+        <p className="btn-submit__note">
+          Decision support only — a credit officer makes the final call.
+        </p>
+      </div>
     </form>
   );
 }

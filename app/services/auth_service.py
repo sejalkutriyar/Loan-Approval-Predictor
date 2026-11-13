@@ -1,5 +1,9 @@
 import logging
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
+
+from pymongo.errors import DuplicateKeyError
+
 from app.core.security import hash_password, verify_password
 from app.core.database import get_sync_db
 from app.schemas.auth_schema import UserRole, UserProfile
@@ -49,6 +53,51 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     if not verify_password(password, user.get("hashed_password", "")):
         return None
     return user
+
+
+class UsernameTakenError(Exception):
+    """Raised when a sign-up username collides with an existing account."""
+
+
+class RegistrationUnavailableError(Exception):
+    """Raised when the user store cannot be reached during sign-up."""
+
+
+def create_user(
+    username: str,
+    full_name: str,
+    email: str,
+    password: str,
+) -> Dict[str, Any]:
+    """Creates and persists a new OFFICER account, returning the stored document."""
+    normalized = username.strip().lower()
+
+    if normalized in DEFAULT_USERS:
+        raise UsernameTakenError(normalized)
+
+    document = {
+        "username": normalized,
+        "hashed_password": hash_password(password),
+        "role": UserRole.OFFICER.value,
+        "full_name": full_name.strip(),
+        "email": email.strip().lower(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    try:
+        users_col = get_sync_db()["users"]
+        if users_col.find_one({"username": normalized}):
+            raise UsernameTakenError(normalized)
+        users_col.insert_one(document)
+    except UsernameTakenError:
+        raise
+    except DuplicateKeyError as exc:
+        raise UsernameTakenError(normalized) from exc
+    except Exception as exc:
+        logger.error(f"User registration failed: {exc}")
+        raise RegistrationUnavailableError("Could not create the account.") from exc
+
+    return document
 
 
 def seed_default_users() -> int:

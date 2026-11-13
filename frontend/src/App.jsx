@@ -1,31 +1,78 @@
 import React, { useState, useEffect } from "react";
 import Login from "./components/Login.jsx";
 import {
-  ShieldCheck,
   Building2,
-  Cpu,
-  Layers,
-  Sparkles,
-  AlertCircle,
-  TrendingDown,
-  CheckCircle2,
-  Clock,
-  User,
-  SlidersHorizontal,
+  ShieldCheck,
   Scale,
   LogOut,
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  ClipboardList,
 } from "lucide-react";
 import { PRESETS } from "./presets.js";
-import { predict, recourse, getFairnessReport, getCurrentUser, logout } from "./api.js";
+import {
+  predict,
+  recourse,
+  getFairnessReport,
+  getCurrentUser,
+  getHealth,
+  logout,
+} from "./api.js";
 import Form from "./components/Form.jsx";
 import Result from "./components/Result.jsx";
 import Recourse from "./components/Recourse.jsx";
 import FairnessModal from "./components/FairnessModal.jsx";
+import Analytics from "./components/Analytics.jsx";
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
+const OUTCOME = {
+  prime: { label: "Approved", className: "preset-card__hint--prime" },
+  borderline: { label: "Manual review", className: "preset-card__hint--borderline" },
+  high_risk: { label: "Declined", className: "preset-card__hint--high-risk" },
+};
+
+const DOT = {
+  prime: "preset-card__dot--prime",
+  borderline: "preset-card__dot--borderline",
+  high_risk: "preset-card__dot--high-risk",
+};
+
+const inrShort = (v) => {
+  if (!Number.isFinite(v)) return "—";
+  if (v >= 10000000) return `₹${(v / 10000000).toFixed(2)} Cr`;
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)} L`;
+  return `₹${Math.round(v / 1000)}k`;
+};
+
+function presetMeta(data) {
+  const score = Math.round(300 + Math.min(Math.max(data.EXT_SOURCE_2 ?? 0.5, 0), 1) * 600);
+  const age = Math.round(-(data.DAYS_BIRTH ?? 0) / 365);
+  return `${score} bureau score · ${inrShort(data.AMT_CREDIT)} loan · ${age} yrs`;
+}
+
+const PIPELINE_STEPS = [
+  "Applicant data is encoded into the model's 171 input features",
+  "The neural network estimates a calibrated default probability",
+  "50 dropout passes measure how stable that estimate is",
+  "Key drivers are attributed for the credit officer (gender excluded)",
+  "A counterfactual search suggests achievable improvements",
+];
+
+const initialsOf = (name) => {
+  const parts = String(name || "")
+    .replace(/^Officer:\s*/i, "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return "OF";
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+};
+
 export default function App() {
-  // ── Authentication State (Hooks at top unconditionally) ──
+  // ── Authentication state (hooks run unconditionally) ──
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("jwt_token"));
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -36,7 +83,6 @@ export default function App() {
     }
   });
 
-  // Verify and hydrate current user profile on mount
   useEffect(() => {
     const token = localStorage.getItem("jwt_token");
     if (token) {
@@ -46,7 +92,6 @@ export default function App() {
           setIsLoggedIn(true);
         })
         .catch(() => {
-          // Token expired or invalid
           logout();
           setIsLoggedIn(false);
           setCurrentUser(null);
@@ -54,30 +99,53 @@ export default function App() {
     }
   }, []);
 
+  // ── Workspace view (analytics is admin-only) ──
+  const [view, setView] = useState("intake");
+
   const handleLogout = () => {
     logout();
     setIsLoggedIn(false);
     setCurrentUser(null);
+    setView("intake");
+    setFairnessReport(null);
+    setResult(null);
+    setRec(null);
+    setResultStale(false);
+    setError("");
+    setRecError("");
   };
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     setIsLoggedIn(true);
+    setView("intake");
   };
 
-  // ── Main Dashboard Application State ──
+  // ── Dashboard state ──
   const [applicant, setApplicant] = useState(clone(PRESETS[1].data));
   const [active, setActive] = useState("borderline");
   const [result, setResult] = useState(null);
+  const [resultStale, setResultStale] = useState(false);
   const [rec, setRec] = useState(null);
   const [loading, setLoading] = useState(false);
   const [recLoading, setRecLoading] = useState(false);
   const [error, setError] = useState("");
   const [recError, setRecError] = useState("");
+  const [apiOnline, setApiOnline] = useState(null);
   const [fairnessOpen, setFairnessOpen] = useState(false);
   const [fairnessReport, setFairnessReport] = useState(null);
   const [fairnessLoading, setFairnessLoading] = useState(false);
   const [fairnessError, setFairnessError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getHealth()
+      .then(() => !cancelled && setApiOnline(true))
+      .catch(() => !cancelled && setApiOnline(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const openFairnessAudit = async () => {
     setFairnessOpen(true);
@@ -95,12 +163,22 @@ export default function App() {
     }
   };
 
-  const setField = (k, v) => setApplicant((a) => ({ ...a, [k]: v }));
+  const setField = (k, v) => {
+    setApplicant((a) => ({ ...a, [k]: v }));
+    setActive("custom");
+    if (result) {
+      setResultStale(true);
+      // Suggestions were computed for the previous profile; drop them so
+      // "Apply and re-assess" cannot apply changes to a different applicant.
+      setRec(null);
+    }
+  };
 
   const loadPreset = (p) => {
     setApplicant(clone(p.data));
     setActive(p.id);
     setResult(null);
+    setResultStale(false);
     setRec(null);
     setError("");
     setRecError("");
@@ -111,11 +189,12 @@ export default function App() {
 
   const evaluate = async (data = applicant) => {
     if (hasNaN(data)) {
-      setError("Please ensure all financial and numerical fields are filled.");
+      setError("Some numeric fields are empty. Fill them in before running the assessment.");
       return;
     }
     setLoading(true);
     setError("");
+    setResultStale(false);
     setRec(null);
     setRecError("");
     try {
@@ -148,170 +227,177 @@ export default function App() {
       next[c.feature] = c.suggested;
     });
     setApplicant(next);
+    setActive("custom");
+    setRec(null);
     evaluate(next);
   };
 
-  // If user is not logged in, render the Login screen
   if (!isLoggedIn) {
     return <Login onLogin={handleLoginSuccess} />;
   }
 
-  const officerLabel =
-    currentUser?.full_name ||
-    (currentUser?.username ? `Officer: ${currentUser.username}` : "Officer: Sejal Kumari");
+  const displayName = currentUser?.full_name || currentUser?.username || "Credit officer";
+  const activePreset = PRESETS.find((p) => p.id === active);
+  const isAdmin = currentUser?.role === "ADMIN";
 
   return (
     <div className="app-shell">
-      {/* 1. Institutional Top Navigation Bar */}
       <header className="app-header">
         <div className="app-header__inner">
-          {/* Logo & Platform ID */}
-          <div className="flex items-center gap-3">
-            <div className="app-header__logo-wrap">
-              <div className="app-header__logo-inner">
-                <Building2 className="text-indigo-400" size={20} />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="app-header__brand-name">
-                  Loan Approval Predictor
-                </h1>
-              </div>
-              <p className="app-header__subtitle">
-                ML-Powered Credit Assessment &amp; Risk Prediction • Home Credit Dataset
-              </p>
-            </div>
+          <div className="app-brand">
+            <span className="app-brand__mark" aria-hidden="true">
+              <Building2 size={18} strokeWidth={1.75} />
+            </span>
+            <span className="app-brand__text">
+              <span className="app-brand__name">Loan Approval Predictor</span>
+              <span className="app-brand__sub">
+                Credit decision support · Home Credit dataset
+              </span>
+            </span>
           </div>
 
-          {/* System Telemetry & Badges */}
-          <div className="app-header__telemetry">
-            <div className="badge-connected">
-              <span className="badge-connected__dot" />
-              <span>FastAPI Connected</span>
-            </div>
-
-            <div className="badge-pill">
-              <Cpu size={12} className="text-indigo-400" />
-              <span>ANN-v1 Production (171-D)</span>
-            </div>
-
-            {/* Current Officer / User Badge */}
-            <div className="badge-pill">
-              <User size={12} className="text-slate-400" />
-              <span>{officerLabel}</span>
-              {currentUser?.role && (
-                <span className="ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  {currentUser.role}
-                </span>
-              )}
-            </div>
+          <div className="app-header__actions">
+            <span
+              className={`status-pill${
+                apiOnline === true
+                  ? " status-pill--online"
+                  : apiOnline === false
+                  ? " status-pill--offline"
+                  : ""
+              }`}
+              title="Backend model service status"
+            >
+              <span className="status-pill__dot" />
+              {apiOnline === null ? "Checking API" : apiOnline ? "API online" : "API unreachable"}
+            </span>
 
             <button
+              type="button"
               onClick={openFairnessAudit}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition-all shadow-sm"
-              title="View Responsible AI & Fairness Audit Report"
+              className="header-button"
+              title="Open the fairness and audit report"
+              aria-label="Open the fairness and audit report"
             >
-              <Scale size={13} className="text-indigo-400" />
-              <span>Fairness &amp; Audit</span>
+              <Scale size={15} strokeWidth={1.75} />
+              <span className="hidden lg:inline">Fairness</span>
             </button>
 
-            {/* Logout Action Button */}
+            <div className="header-user">
+              <span className="header-user__avatar" aria-hidden="true">
+                {initialsOf(displayName)}
+              </span>
+              <span className="header-user__meta">
+                <span className="header-user__name">{displayName}</span>
+                <span className="header-user__role">{currentUser?.role || "Officer"}</span>
+              </span>
+            </div>
+
             <button
+              type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition-all shadow-sm"
-              title="Sign out of underwriting session"
+              className="header-button header-button--quiet"
+              title="Sign out"
+              aria-label="Sign out"
             >
-              <LogOut size={13} className="text-rose-400" />
-              <span>Logout</span>
+              <LogOut size={15} strokeWidth={1.75} />
+              <span className="hidden lg:inline">Sign out</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* 2. Main Dashboard Content */}
       <main className="app-main">
-        {/* Demo Applicant Profiles Switcher */}
-        <section className="preset-section">
+        {isAdmin && (
+          <div className="view-tabs" role="tablist" aria-label="Workspace views">
+            <button
+              id="tab-intake"
+              type="button"
+              role="tab"
+              aria-selected={view === "intake"}
+              aria-controls="panel-intake"
+              onClick={() => setView("intake")}
+              className={`view-tab${view === "intake" ? " view-tab--active" : ""}`}
+            >
+              <ClipboardList size={14} strokeWidth={1.9} aria-hidden="true" />
+              Underwriting intake
+            </button>
+            <button
+              id="tab-analytics"
+              type="button"
+              role="tab"
+              aria-selected={view === "analytics"}
+              aria-controls="panel-analytics"
+              onClick={() => setView("analytics")}
+              className={`view-tab${view === "analytics" ? " view-tab--active" : ""}`}
+            >
+              <BarChart3 size={14} strokeWidth={1.9} aria-hidden="true" />
+              Analytics &amp; audit
+            </button>
+          </div>
+        )}
+
+        {isAdmin && view === "analytics" ? (
+          <div id="panel-analytics" role="tabpanel" aria-labelledby="tab-analytics">
+            <Analytics />
+          </div>
+        ) : (
+        <div
+          id="panel-intake"
+          role="tabpanel"
+          aria-labelledby={isAdmin ? "tab-intake" : undefined}
+          className="space-y-5"
+        >
+        <section className="preset-section" aria-label="Sample applications">
           <div className="preset-section__header">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal size={15} className="text-indigo-400" />
-              <h2 className="preset-section__title">
-                Demo Profiles: [Prime] [Average] [High Risk]
-              </h2>
+            <div>
+              <h2 className="preset-section__title">Sample applications</h2>
+              <p className="preset-section__subtitle">
+                Load a prepared applicant, or edit any field to run your own case.
+              </p>
             </div>
-            <span className="preset-section__subtitle">
-              Click any profile to test different applicant scenarios
+            <span className="hidden text-[12px] text-subtle sm:inline">
+              {activePreset ? activePreset.label : "Custom applicant"}
             </span>
           </div>
 
           <div className="preset-grid">
             {PRESETS.map((p) => {
               const isSelected = active === p.id;
-              const isPrime = p.id === "prime";
-              const isBorderline = p.id === "borderline";
-
+              const outcome = OUTCOME[p.id];
               return (
                 <button
                   key={p.id}
+                  type="button"
                   onClick={() => loadPreset(p)}
-                  className={`group preset-card${isSelected ? " preset-card--active" : ""}`}
+                  aria-pressed={isSelected}
+                  className={`preset-card${isSelected ? " preset-card--active" : ""}`}
                 >
-                  <div className="preset-card__header">
+                  <span className="preset-card__header">
                     <span className="preset-card__label">
-                      <span
-                        className={
-                          isPrime
-                            ? "preset-card__dot--prime"
-                            : isBorderline
-                            ? "preset-card__dot--borderline"
-                            : "preset-card__dot--high-risk"
-                        }
-                      />
+                      <span className={DOT[p.id]} aria-hidden="true" />
                       {p.label}
                     </span>
-                    <span
-                      className={
-                        isPrime
-                          ? "preset-card__hint--prime"
-                          : isBorderline
-                          ? "preset-card__hint--borderline"
-                          : "preset-card__hint--high-risk"
-                      }
-                    >
-                      {p.hint}
-                    </span>
-                  </div>
-
-                  <p className="preset-card__desc">
-                    {isPrime
-                      ? "High Credit Score • Low Debt • Gets Approved"
-                      : isBorderline
-                      ? "Moderate Score • ₹9.0L Loan • Needs Manual Review"
-                      : "Low Credit Score • High Debt • Gets Rejected"}
-                  </p>
+                    <span className={outcome.className}>{outcome.label}</span>
+                  </span>
+                  <span className="preset-card__meta">{presetMeta(p.data)}</span>
                 </button>
               );
             })}
           </div>
         </section>
 
-        {/* 3. Underwriting Intake & Dossier Grid */}
         <div className="dashboard-grid">
-          {/* Left Column: Application Form (7 cols) */}
           <div className="dashboard-left">
             <div className="form-panel">
               <div className="form-panel__header">
                 <div>
-                  <h2 className="form-panel__title">
-                    <span>Loan Application Details</span>
-                  </h2>
+                  <h2 className="form-panel__title">Loan application</h2>
                   <p className="form-panel__subtitle">
-                    Enter applicant financial details or test with demo profiles above
+                    Income, loan terms and bureau records used by the model.
                   </p>
                 </div>
                 <span className="form-panel__profile-badge">
-                  Profile: {active.toUpperCase()}
+                  {activePreset ? activePreset.label : "Custom"}
                 </span>
               </div>
 
@@ -324,69 +410,71 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Column: Underwriting Verdict & XAI Dossier (5 cols) */}
           <div className="dashboard-right">
             {error && (
-              <div className="error-banner">
-                <AlertCircle size={18} className="text-rose-400 shrink-0 mt-0.5" />
+              <div className="error-banner" role="alert">
+                <AlertCircle size={17} className="mt-0.5 shrink-0" />
                 <div>
-                  <h4 className="error-banner__title">Inference Request Failed</h4>
-                  <p className="opacity-90">{error}</p>
+                  <p className="error-banner__title">Assessment could not run</p>
+                  <p>{error}</p>
                 </div>
               </div>
             )}
 
-            {/* Standby State (Before clicking Evaluate) */}
+            {result && resultStale && (
+              <div className="stale-banner" role="status">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>The application changed after this assessment was produced.</span>
+                  <button
+                    type="button"
+                    onClick={() => evaluate()}
+                    className="inline-flex items-center gap-1 font-semibold underline underline-offset-2"
+                  >
+                    Re-run assessment
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {!result && !error && (
               <div className="standby-panel">
-                <div className="standby-panel__icon">
-                  <ShieldCheck size={28} />
-                </div>
-
+                <span className="standby-panel__icon" aria-hidden="true">
+                  <ShieldCheck size={20} strokeWidth={1.75} />
+                </span>
                 <div>
-                  <h3 className="standby-panel__title">
-                    Underwriting Dossier: Standby
-                  </h3>
+                  <h3 className="standby-panel__title">No assessment yet</h3>
                   <p className="standby-panel__subtitle">
-                    Select a benchmark profile above or modify application parameters, then execute the neural underwriting engine.
+                    Review the application on the left, then run the assessment to see the
+                    decision, confidence and key drivers.
                   </p>
                 </div>
 
-                {/* Pipeline Feature Checklist */}
-                <div className="pipeline-checklist">
-                  <div className="pipeline-checklist__item">
-                    <CheckCircle2 size={13} className="text-indigo-400" />
-                    <span>One-Hot Preprocessing (171 Dimensions)</span>
-                  </div>
-                  <div className="pipeline-checklist__item">
-                    <CheckCircle2 size={13} className="text-indigo-400" />
-                    <span>50-Pass Monte Carlo Dropout (Epistemic σ)</span>
-                  </div>
-                  <div className="pipeline-checklist__item">
-                    <CheckCircle2 size={13} className="text-indigo-400" />
-                    <span>Platt-Scaled Empirical Probability Calibration</span>
-                  </div>
-                  <div className="pipeline-checklist__item">
-                    <CheckCircle2 size={13} className="text-indigo-400" />
-                    <span>SHAP Kernel Attribution (Gender Excluded)</span>
-                  </div>
-                  <div className="pipeline-checklist__item">
-                    <CheckCircle2 size={13} className="text-indigo-400" />
-                    <span>DiCE Counterfactual Optimization (Recourse)</span>
-                  </div>
-                </div>
+                <ol className="pipeline-checklist">
+                  {PIPELINE_STEPS.map((step, i) => (
+                    <li key={step} className="pipeline-checklist__item">
+                      <span
+                        className="w-4 shrink-0 font-mono text-[11px] text-subtle"
+                        aria-hidden="true"
+                      >
+                        0{i + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
 
                 <div className="pipeline-checklist__footer">
-                  <span>Thresholds: ≤10% Approved</span>
-                  <span>&gt;20% Decline</span>
+                  <span>Approved at ≤10% default risk</span>
+                  <span>Declined above 20%</span>
                 </div>
               </div>
             )}
 
-            {/* Evaluated Result & Recourse */}
             {result && (
               <>
-                <Result result={result} />
+                <Result result={result} applicant={applicant} />
                 <Recourse
                   decision={result.decision}
                   data={rec}
@@ -399,14 +487,14 @@ export default function App() {
             )}
           </div>
         </div>
+        </div>
+        )}
       </main>
 
-      {/* 4. Footer */}
       <footer className="app-footer">
-        Loan Approval Decision Support System • Advanced Data Science OJT • PyTorch • FastAPI • React
+        Internal decision-support prototype · Not a final credit decision · Home Credit dataset
       </footer>
 
-      {/* 5. Responsible AI Fairness Audit Modal */}
       <FairnessModal
         isOpen={fairnessOpen}
         onClose={() => setFairnessOpen(false)}

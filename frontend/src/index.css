@@ -1,34 +1,63 @@
-/* ── Component-level CSS ─────────────────────────────────── */
-/* Must be imported before @tailwind directives (CSS spec) */
+/* =========================================================
+   Global base styles — light institutional theme
+   ========================================================= */
+
 @import "./app.css";
 @import "./components/form.css";
 @import "./components/result.css";
 @import "./components/recourse.css";
+@import "./components/analytics.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Base typography & scrollbars ─────────────────────────── */
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    @apply bg-paper text-ink font-sans;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
+  ::selection {
+    @apply bg-brand text-white;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand/30 ring-offset-2 ring-offset-paper;
+  }
+
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.6);
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(100, 116, 139, 0.4);
+    background: rgba(29, 42, 56, 0.18);
+    border: 3px solid transparent;
+    background-clip: content-box;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.7);
+    background: rgba(29, 42, 56, 0.32);
+    border: 3px solid transparent;
+    background-clip: content-box;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

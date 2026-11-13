@@ -3,258 +3,193 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  ShieldCheck,
-  TrendingDown,
   TrendingUp,
-  HelpCircle,
-  Cpu,
+  TrendingDown,
 } from "lucide-react";
-import { label, pct } from "../fields.js";
+import { label, fmtValue, pct } from "../fields.js";
 import "./result.css";
 
-const DECISION_CONFIG = {
+const CONFIG = {
   Approved: {
-    title: "APPROVED FOR DISBURSAL",
-    subtitle: "Low calibrated default probability meets institutional risk criteria.",
-    bannerClass: "verdict-banner verdict-banner--approved",
-    ratingClass: "verdict-banner__rating--prime",
+    tone: "approved",
     icon: CheckCircle2,
-    rating: "TIER A • LOW RISK",
-  },
-  Rejected: {
-    title: "APPLICATION DECLINED",
-    subtitle: "High probability of credit default exceeds standard risk tolerance.",
-    bannerClass: "verdict-banner verdict-banner--rejected",
-    ratingClass: "verdict-banner__rating--rejected",
-    icon: XCircle,
-    rating: "TIER C • SUBPRIME / HIGH RISK",
+    chip: "Approved",
+    title: "Approved",
+    text: "The model estimates a low probability of default, within the standard approval threshold.",
   },
   "Needs Manual Review": {
-    title: "REFERRED TO CREDIT COMMITTEE",
-    subtitle: "Borderline default risk requires human underwriter manual review.",
-    bannerClass: "verdict-banner verdict-banner--review",
-    ratingClass: "verdict-banner__rating--review",
+    tone: "review",
     icon: AlertTriangle,
-    rating: "TIER B • BORDERLINE / MANUAL AUDIT",
+    chip: "Needs review",
+    title: "Manual review",
+    text: "The estimate sits between the approval and decline thresholds, or is unstable across dropout passes. A credit officer should look at this file.",
+  },
+  Rejected: {
+    tone: "rejected",
+    icon: XCircle,
+    chip: "Declined",
+    title: "Declined",
+    text: "The model estimates a high probability of default, above the standard decline threshold.",
   },
 };
 
-function ExecutiveMetric({ title, value, sub, icon: Icon, badge }) {
+function RiskMeter({ p }) {
+  const MAX = 0.4;
+  const position = (Math.min(Math.max(p, 0), MAX) / MAX) * 100;
   return (
-    <div className="metric-card">
-      <div>
-        <div className="metric-card__header">
-          <span className="metric-card__title">{title}</span>
-          {Icon && <Icon size={15} className="text-slate-500" />}
+    <div className="risk-meter">
+      <div className="risk-meter__header">
+        <div>
+          <h4 className="risk-meter__title">Where this application sits</h4>
+          <p className="risk-meter__subtitle">
+            Calibrated default probability against the policy thresholds
+          </p>
         </div>
-        <div className="metric-card__value">{value}</div>
+        <span className="risk-meter__value">p = {pct(p)}</span>
       </div>
-      {(sub || badge) && (
-        <div className="metric-card__footer">
-          <span className="metric-card__sub">{sub}</span>
-          {badge && <span className="metric-card__badge">{badge}</span>}
+
+      <div className="risk-meter__track-wrap">
+        <div className="risk-meter__track">
+          <div className="risk-meter__zone--approve" />
+          <div className="risk-meter__zone--review" />
+          <div className="risk-meter__zone--reject" />
+        </div>
+        <div
+          className="risk-meter__needle"
+          style={{ left: `${position}%` }}
+          aria-hidden="true"
+        />
+      </div>
+
+      <div className="risk-meter__legend">
+        <span className="risk-meter__legend-left">≤ 10% approve</span>
+        <span className="risk-meter__legend-mid">10–20% review</span>
+        <span className="risk-meter__legend-right">&gt; 20% decline</span>
+      </div>
+    </div>
+  );
+}
+
+function DriverList({ codes, applicant }) {
+  const hasCodes = codes?.length > 0;
+  return (
+    <div className="drivers">
+      <div className="drivers__header">
+        <div>
+          <h4 className="drivers__title">What moved this estimate</h4>
+          <p className="drivers__subtitle">
+            Relative influence of each factor · gender is never used
+          </p>
+        </div>
+      </div>
+
+      {!hasCodes ? (
+        <p className="drivers__empty">
+          An explanation could not be produced for this application.
+        </p>
+      ) : (
+        <div className="drivers__list">
+          {codes.map((c) => {
+            const maxImpact = Math.max(...codes.map((x) => Math.abs(x.impact)), 0.001);
+            const raises = String(c.direction).includes("increase") || c.impact > 0;
+            const width = Math.max((Math.abs(c.impact) / maxImpact) * 100, 4);
+            const current =
+              applicant && Object.prototype.hasOwnProperty.call(applicant, c.factor)
+                ? fmtValue(c.factor, applicant[c.factor])
+                : null;
+
+            return (
+              <div
+                key={c.factor}
+                className="driver"
+                title={`Model attribution: ${c.impact.toFixed(3)}`}
+              >
+                <div className="driver__row">
+                  <span className="driver__factor">
+                    {label(c.factor)}
+                    {current && <span className="driver__current">{current}</span>}
+                  </span>
+                  <span
+                    className={`driver__effect ${
+                      raises ? "driver__effect--raises" : "driver__effect--lowers"
+                    }`}
+                  >
+                    {raises ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                    {raises ? "raises risk" : "lowers risk"}
+                  </span>
+                </div>
+                <div className="driver__track">
+                  <div
+                    className={`driver__fill ${
+                      raises ? "driver__fill--raises" : "driver__fill--lowers"
+                    }`}
+                    style={{ width: `${width}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-function CalibratedRiskMeter({ p }) {
-  const MAX = 0.4;
-  const clampedP = Math.min(Math.max(p, 0), MAX);
-  const positionPercent = (clampedP / MAX) * 100;
-
-  return (
-    <div className="risk-meter">
-      <div className="risk-meter__header">
-        <div>
-          <h4 className="risk-meter__title">Calibrated Risk Spectrum</h4>
-          <p className="risk-meter__subtitle">
-            Platt-scaled empirical default probability vs decision thresholds
-          </p>
-        </div>
-        <span className="risk-meter__value-badge">
-          p = {(p * 100).toFixed(2)}%
-        </span>
-      </div>
-
-      {/* Meter Bar */}
-      <div className="risk-meter__track-wrap">
-        {/* Track with 3 Zones */}
-        <div className="risk-meter__track">
-          {/* Zone 1: 0% to 10% (Approve) = 25% of 40% bar */}
-          <div
-            className="risk-meter__zone--approve"
-            style={{ width: "25%" }}
-            title="Approve Zone (≤ 10%)"
-          />
-          {/* Zone 2: 10% to 20% (Review) = 25% of 40% bar */}
-          <div
-            className="risk-meter__zone--review"
-            style={{ width: "25%" }}
-            title="Manual Review Zone (10% - 20%)"
-          />
-          {/* Zone 3: 20% to 40%+ (Reject) = 50% of 40% bar */}
-          <div
-            className="risk-meter__zone--reject"
-            style={{ width: "50%" }}
-            title="Decline Zone (> 20%)"
-          />
-        </div>
-
-        {/* Current Applicant Needle Pointer */}
-        <div
-          className="risk-meter__needle"
-          style={{ left: `${positionPercent}%` }}
-        >
-          <div className="risk-meter__needle-bar" />
-          <div className="risk-meter__needle-tip" />
-        </div>
-      </div>
-
-      {/* Zone Threshold Indicators */}
-      <div className="risk-meter__legend">
-        <div className="risk-meter__legend--approve">
-          <span className="font-bold">0% - 10%</span> (Approved)
-        </div>
-        <div className="risk-meter__legend--review">
-          <span className="font-bold">10% - 20%</span> (Review)
-        </div>
-        <div className="risk-meter__legend--reject">
-          <span className="font-bold">&gt; 20%</span> (Decline)
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ShapAttributionList({ codes }) {
-  if (!codes?.length) return null;
-  const maxImpact = Math.max(...codes.map((c) => Math.abs(c.impact)), 0.001);
-
-  return (
-    <div className="shap-list">
-      <div className="shap-list__header">
-        <div>
-          <h4 className="shap-list__title">SHAP Reason Codes (Explainability)</h4>
-          <p className="shap-list__subtitle">
-            Top factors influencing model default-risk logits (Protected attributes excluded)
-          </p>
-        </div>
-        <span className="shap-list__engine-badge">KernelExplainer</span>
-      </div>
-
-      <div className="shap-list__items">
-        {codes.map((c, i) => {
-          const isRiskRaiser = String(c.direction).includes("increase");
-          const impactPercent = ((Math.abs(c.impact) / maxImpact) * 100).toFixed(0);
-
-          return (
-            <div key={i} className="shap-item">
-              <div className="shap-item__row">
-                <span className="shap-item__factor" title={c.factor}>
-                  {label(c.factor)}
-                </span>
-                <div className="flex items-center gap-1.5 font-mono">
-                  <span className={isRiskRaiser ? "shap-item__badge--raises" : "shap-item__badge--lowers"}>
-                    {isRiskRaiser ? (
-                      <>
-                        <TrendingUp size={11} /> +{(c.impact * 100).toFixed(1)}% (Raises Risk)
-                      </>
-                    ) : (
-                      <>
-                        <TrendingDown size={11} /> {(c.impact * 100).toFixed(1)}% (Lowers Risk)
-                      </>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* Relative Impact Progress Bar */}
-              <div className="shap-item__bar-track">
-                <div
-                  className={isRiskRaiser ? "shap-item__bar--raises" : "shap-item__bar--lowers"}
-                  style={{ width: `${Math.max(Number(impactPercent), 5)}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export default function Result({ result }) {
-  const cfg =
-    DECISION_CONFIG[result.decision] || DECISION_CONFIG["Needs Manual Review"];
+export default function Result({ result, applicant }) {
+  const cfg = CONFIG[result.decision] || CONFIG["Needs Manual Review"];
   const Icon = cfg.icon;
+  const p = result.default_probability;
+  const zoneNote =
+    p <= 0.1
+      ? result.decision === "Needs Manual Review"
+        ? "Approval zone · unstable estimate"
+        : "Approval zone"
+      : p <= 0.2
+      ? "Review band"
+      : "Decline zone";
 
   return (
-    <div className="result-root">
-      {/* 1. Executive Verdict Banner */}
-      <div className={cfg.bannerClass}>
-        <div className="verdict-banner__icon-wrap">
-          <Icon size={28} />
+    <div className="result-card">
+      <div className={`result-verdict result-verdict--${cfg.tone}`}>
+        <div className="result-verdict__head">
+          <span className="result-verdict__chip">
+            <Icon size={13} strokeWidth={2} />
+            {cfg.chip}
+          </span>
+          <span className="result-verdict__meta">{result.model_version} · calibrated</span>
         </div>
-        <div className="verdict-banner__body">
-          <div className="verdict-banner__header-row">
-            <h3 className="verdict-banner__title">{cfg.title}</h3>
-            <span className={cfg.ratingClass}>{cfg.rating}</span>
-          </div>
-          <p className="verdict-banner__subtitle">{cfg.subtitle}</p>
-          <div className="verdict-banner__meta-row">
-            <span className="flex items-center gap-1">
-              <Cpu size={12} /> Model: <b>{result.model_version}</b>
-            </span>
-            <span>•</span>
-            <span>Calibrated Platt Scaling Engine</span>
-          </div>
+        <h2 className="result-verdict__title">{cfg.title}</h2>
+        <p className="result-verdict__text">{cfg.text}</p>
+      </div>
+
+      <div className="result-stats">
+        <div className="result-stat">
+          <p className="result-stat__label">Default risk</p>
+          <p className="result-stat__value">{pct(p)}</p>
+          <p className="result-stat__note">{zoneNote}</p>
+        </div>
+        <div className="result-stat">
+          <p className="result-stat__label">Confidence</p>
+          <p className="result-stat__value">{pct(result.confidence_score)}</p>
+          <p className="result-stat__note">Repayment probability</p>
+        </div>
+        <div className="result-stat">
+          <p className="result-stat__label">Uncertainty</p>
+          <p className="result-stat__value">{result.uncertainty_score.toFixed(3)}</p>
+          <p className="result-stat__note">
+            {result.uncertainty_score > 0.1 ? "High — review required" : "Stable estimate"}
+          </p>
         </div>
       </div>
 
-      {/* 2. Key Underwriting Metrics (3 Cards) */}
-      <div className="metrics-grid">
-        <ExecutiveMetric
-          title="Calibrated Default Risk (p)"
-          value={pct(result.default_probability)}
-          sub={
-            result.default_probability <= 0.1
-              ? "Underwriting zone ≤ 10%"
-              : result.default_probability <= 0.2
-              ? "Borderline zone 10-20%"
-              : "High default zone > 20%"
-          }
-          icon={TrendingUp}
-          badge="Platt Scaled"
-        />
+      <RiskMeter p={p} />
 
-        <ExecutiveMetric
-          title="Underwriting Confidence (1-p)"
-          value={pct(result.confidence_score)}
-          sub="Reimbursement probability"
-          icon={ShieldCheck}
-          badge="Inverted P"
-        />
+      <DriverList codes={result.reason_codes} applicant={applicant} />
 
-        <ExecutiveMetric
-          title="Epistemic Uncertainty (σ)"
-          value={result.uncertainty_score.toFixed(4)}
-          sub={
-            result.uncertainty_score > 0.1
-              ? "High variance forces review"
-              : "Within safe bound (≤0.10)"
-          }
-          icon={HelpCircle}
-          badge="50 MC Passes"
-        />
-      </div>
-
-      {/* 3. Risk Spectrum Gauge */}
-      <CalibratedRiskMeter p={result.default_probability} />
-
-      {/* 4. SHAP Reason Codes */}
-      <ShapAttributionList codes={result.reason_codes} />
+      <p className="result-footnote">
+        {result.application_id ? `Saved as ${result.application_id} · ` : "Not stored · "}
+        Decision support only. The model does not make the final credit decision.
+      </p>
     </div>
   );
 }
