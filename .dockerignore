@@ -1,0 +1,35 @@
+# Secrets and local config must never enter the image
+.env
+.env.*
+!.env.example
+
+# VCS and editor state
+.git
+.gitignore
+.qoder
+.vscode
+.idea
+
+# Python caches and test artifacts
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.venv
+venv
+
+# Frontend is built by its own image
+frontend
+
+# Not needed at runtime
+notebooks
+prompts
+scripts
+tests
+test_pipeline.py
+test_recourse.py
+*.md
+
+# OS noise
+Thumbs.db
+.DS_Store

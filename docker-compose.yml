@@ -1,0 +1,42 @@
+name: loan-approval-predictor
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: loan-approval-api:1.0.0
+    container_name: loan-api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Defaults so the stack still boots without a local .env.
+      # Real deployments must override JWT_SECRET (and MONGODB_URI via .env).
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=8)",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    image: loan-approval-web:1.0.0
+    container_name: loan-web
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

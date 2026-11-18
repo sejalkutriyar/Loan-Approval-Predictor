@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import {
-  AlertCircle,
-  ArrowRight,
-  AtSign,
-  Building2,
-  Eye,
-  EyeOff,
-  Info,
-  Lock,
-  Mail,
-  User,
-} from "lucide-react";
+import {AlertCircle, ArrowRight, AtSign, Building2, Eye, EyeOff, Info, Lock, Mail, User} from "lucide-react";
 import { login, register } from "../api";
 import "./Login.css";
 
