@@ -26,8 +26,6 @@ notebooks
 prompts
 scripts
 tests
-test_pipeline.py
-test_recourse.py
 *.md
 
 # OS noise
