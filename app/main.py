@@ -28,11 +28,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: configurable through CORS_ORIGINS, defaulting to local Vite origins.
+# CORS: configurable through CORS_ORIGINS, allowing local Vite and Vercel domains.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
