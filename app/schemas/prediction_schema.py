@@ -25,6 +25,8 @@ class PredictionResponse(BaseModel):
     default_probability: float
     confidence_score: float
     uncertainty_score: float
+    dti_ratio: Optional[float] = None
+    policy_flag: Optional[str] = None
     reason_codes: List[ReasonCode] = []
     explanation_available: bool = True
     model_version: str = "ANN-v1"

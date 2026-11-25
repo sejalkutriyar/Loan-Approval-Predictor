@@ -159,8 +159,20 @@ export default function Result({ result, applicant }) {
           <span className="result-verdict__meta">{result.model_version} · calibrated</span>
         </div>
         <h2 className="result-verdict__title">{cfg.title}</h2>
-        <p className="result-verdict__text">{cfg.text}</p>
+        <p className="result-verdict__text">
+          {result.policy_flag ? result.policy_flag : cfg.text}
+        </p>
       </div>
+
+      {result.policy_flag && (
+        <div className="mx-5 mt-3.5 flex items-start gap-2 rounded-lg border border-rejected/30 bg-rejected-soft/80 p-3 text-[11.5px] text-rejected">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-rejected" />
+          <div>
+            <span className="font-semibold block">Underwriting Policy Action:</span>
+            <span>{result.policy_flag}</span>
+          </div>
+        </div>
+      )}
 
       <div className="result-stats">
         <div className="result-stat">

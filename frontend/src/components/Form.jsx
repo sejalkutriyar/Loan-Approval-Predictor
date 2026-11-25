@@ -264,6 +264,43 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
             onChange={(v) => setYears("DAYS_EMPLOYED", v)}
           />
         </div>
+
+        {Number.isFinite(applicant.AMT_INCOME_TOTAL) &&
+          applicant.AMT_INCOME_TOTAL > 0 &&
+          Number.isFinite(applicant.AMT_ANNUITY) &&
+          applicant.AMT_ANNUITY > 0 && (
+            (() => {
+              const foir = Math.round((applicant.AMT_ANNUITY / applicant.AMT_INCOME_TOTAL) * 100);
+              const isOverburden = foir > 100;
+              const isHigh = foir > 60;
+              return (
+                <div
+                  className={`mt-2.5 rounded-lg border p-2.5 text-[11px] leading-relaxed flex items-center gap-2 ${
+                    isOverburden
+                      ? "border-rejected/30 bg-rejected-soft text-rejected font-medium"
+                      : isHigh
+                      ? "border-review/30 bg-review-soft text-review font-medium"
+                      : "border-approved/30 bg-approved-soft text-approved font-medium"
+                  }`}
+                >
+                  <span className="shrink-0 font-bold">
+                    {isOverburden
+                      ? `⛔ FOIR Breach (${foir}%):`
+                      : isHigh
+                      ? `⚠️ High Debt Load (${foir}%):`
+                      : `✓ Healthy Debt Ratio (${foir}%):`}
+                  </span>
+                  <span>
+                    {isOverburden
+                      ? `Annual EMI is ${foir}% of annual salary! Underwriting policy automatically declines loans when EMI exceeds income capacity.`
+                      : isHigh
+                      ? `Annual EMI consumes ${foir}% of income (standard banking limit is 50–60%). Requires manual underwriter review.`
+                      : `Annual EMI is ${foir}% of income (safely within the 50% banking policy limit).`}
+                  </span>
+                </div>
+              );
+            })()
+          )}
       </section>
 
       <section className="form-section">

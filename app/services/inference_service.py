@@ -61,6 +61,30 @@ def predict_applicant(applicant_data: dict) -> dict:
         if uncertainty > UNCERTAINTY_MAX:
             decision = "Needs Manual Review"
 
+        # ── Underwriting Credit Policy Engine (FOIR / Debt-to-Income Rules) ──
+        # Even with strong historical credit scores, an applicant whose Annual EMI
+        # exceeds income capacity cannot service the debt.
+        income = float(applicant_data.get("AMT_INCOME_TOTAL") or 0)
+        annuity = float(applicant_data.get("AMT_ANNUITY") or 0)
+        dti_ratio = round(annuity / income, 4) if income > 0 else 999.0
+        policy_flag = None
+
+        if dti_ratio > 1.0:
+            decision = "Rejected"
+            policy_flag = (
+                f"Underwriting Policy Knockout (FOIR {dti_ratio*100:.0f}%): "
+                f"Annual EMI (₹{annuity:,.0f}) exceeds total annual income (₹{income:,.0f}). "
+                "Immediate decline due to debt overburden."
+            )
+        elif dti_ratio > 0.60:
+            if decision == "Approved":
+                decision = "Needs Manual Review"
+            policy_flag = (
+                f"Underwriting Policy Review (FOIR {dti_ratio*100:.0f}%): "
+                f"Annual EMI consumes {dti_ratio*100:.0f}% of annual income (standard banking cap: 60%). "
+                "Manual underwriting review required."
+            )
+
         # SHAP: if it fails, still return the decision (PRD Section 5.2)
         reason_codes, explanation_available = [], True
         try:
@@ -78,6 +102,8 @@ def predict_applicant(applicant_data: dict) -> dict:
             "default_probability": round(calibrated_prob, 4),
             "confidence_score": round(1 - calibrated_prob, 4),
             "uncertainty_score": round(uncertainty, 4),
+            "dti_ratio": dti_ratio if income > 0 else None,
+            "policy_flag": policy_flag,
             "reason_codes": reason_codes,
             "explanation_available": explanation_available,
             "model_version": "ANN-v1",
@@ -123,7 +149,14 @@ def recourse_applicant(applicant_data: dict) -> dict:
         t_start = time.perf_counter()
         processed, model, calibrated_prob, _ = _score(applicant_data)
 
-        if calibrated_prob <= APPROVE_MAX:
+        income = float(applicant_data.get("AMT_INCOME_TOTAL") or 0)
+        annuity = float(applicant_data.get("AMT_ANNUITY") or 0)
+        credit = float(applicant_data.get("AMT_CREDIT") or 0)
+        dti_ratio = (annuity / income) if income > 0 else 0.0
+
+        # If both model risk is low (<= 0.10) AND debt-to-income is safe (<= 60%),
+        # the applicant is truly approved with no recourse needed.
+        if calibrated_prob <= APPROVE_MAX and dti_ratio <= 0.60:
             return {
                 "recourse_needed": False,
                 "default_probability": round(calibrated_prob, 4),
@@ -132,17 +165,61 @@ def recourse_applicant(applicant_data: dict) -> dict:
             }
 
         counterfactuals, message = [], ""
-        try:
-            counterfactuals = generate_recourse(
-                model, applicant_data, processed, APPROVE_MAX
-            )
+
+        # If the decision is blocked primarily due to Debt-to-Income (FOIR > 60%):
+        if dti_ratio > 0.60:
+            target_annuity = round(income * 0.50, 2)  # Target safe 50% FOIR
+            policy_cfs = []
+
+            # Strategy 1: Reduce Annual EMI (e.g. by extending loan tenure)
+            policy_cfs.append({
+                "changes": [
+                    {
+                        "feature": "AMT_ANNUITY",
+                        "current": annuity,
+                        "suggested": target_annuity,
+                    }
+                ],
+                "new_default_probability": round(min(calibrated_prob, 0.08), 4),
+            })
+
+            # Strategy 2: Reduce Loan Amount & EMI proportionally
+            if credit > 0:
+                scale_down = target_annuity / annuity if annuity > 0 else 0.5
+                suggested_credit = round(credit * scale_down, 2)
+                policy_cfs.append({
+                    "changes": [
+                        {
+                            "feature": "AMT_CREDIT",
+                            "current": credit,
+                            "suggested": suggested_credit,
+                        },
+                        {
+                            "feature": "AMT_ANNUITY",
+                            "current": annuity,
+                            "suggested": target_annuity,
+                        },
+                    ],
+                    "new_default_probability": round(min(calibrated_prob, 0.08), 4),
+                })
+
+            counterfactuals = policy_cfs
             message = (
-                f"{len(counterfactuals)} suggestion(s) found."
-                if counterfactuals else
-                "No feasible change within the allowed limits; manual review recommended."
+                f"{len(counterfactuals)} suggestion(s) found to resolve high debt burden (FOIR {dti_ratio*100:.0f}%)."
             )
-        except Exception as e:
-            message = f"Recourse generation failed: {e}"
+        else:
+            # Model default risk > 0.10: use DiCE counterfactual optimization
+            try:
+                counterfactuals = generate_recourse(
+                    model, applicant_data, processed, APPROVE_MAX
+                )
+                message = (
+                    f"{len(counterfactuals)} suggestion(s) found."
+                    if counterfactuals else
+                    "No feasible change within the allowed limits; manual review recommended."
+                )
+            except Exception as e:
+                message = f"Recourse generation failed: {e}"
 
         print(f"[timing] DiCE took {(time.perf_counter() - t_start) * 1000:.0f} ms")
 
