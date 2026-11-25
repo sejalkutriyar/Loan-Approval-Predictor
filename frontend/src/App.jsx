@@ -11,7 +11,7 @@ import {
   BarChart3,
   ClipboardList,
 } from "lucide-react";
-import { PRESETS } from "./presets.js";
+import { PRESETS, createEmptyApplicant } from "./presets.js";
 import {
   predict,
   recourse,
@@ -121,9 +121,9 @@ export default function App() {
     setView("intake");
   };
 
-  // ── Dashboard state ──
-  const [applicant, setApplicant] = useState(clone(PRESETS[1].data));
-  const [active, setActive] = useState("borderline");
+  // ── Dashboard state (starts clean / not pre-filled) ──
+  const [applicant, setApplicant] = useState(createEmptyApplicant);
+  const [active, setActive] = useState(null);
   const [result, setResult] = useState(null);
   const [resultStale, setResultStale] = useState(false);
   const [rec, setRec] = useState(null);
@@ -184,12 +184,32 @@ export default function App() {
     setRecError("");
   };
 
-  const hasNaN = (a) =>
-    Object.values(a).some((v) => typeof v === "number" && Number.isNaN(v));
+  const clearForm = () => {
+    setApplicant(createEmptyApplicant());
+    setActive(null);
+    setResult(null);
+    setResultStale(false);
+    setRec(null);
+    setError("");
+    setRecError("");
+  };
+
+  const hasNaN = (a) => {
+    const required = [
+      "AMT_CREDIT",
+      "AMT_ANNUITY",
+      "AMT_GOODS_PRICE",
+      "AMT_INCOME_TOTAL",
+      "DAYS_EMPLOYED",
+      "EXT_SOURCE_2",
+      "EXT_SOURCE_3",
+    ];
+    return required.some((k) => !Number.isFinite(a[k]));
+  };
 
   const evaluate = async (data = applicant) => {
     if (hasNaN(data)) {
-      setError("Some numeric fields are empty. Fill them in before running the assessment.");
+      setError("Please fill in the required customer details (Loan Amount, Duration/EMI, Asset Price, Income, Job Time, and Bureau Scores) before running the assessment.");
       return;
     }
     setLoading(true);
@@ -356,11 +376,28 @@ export default function App() {
               </p>
             </div>
             <span className="hidden text-[12px] text-subtle sm:inline">
-              {activePreset ? activePreset.label : "Custom applicant"}
+              {activePreset ? activePreset.label : active === null ? "New Customer (Blank)" : "Custom applicant"}
             </span>
           </div>
 
           <div className="preset-grid">
+            <button
+              type="button"
+              onClick={clearForm}
+              aria-pressed={active === null}
+              className={`preset-card${active === null ? " preset-card--active" : ""}`}
+            >
+              <span className="preset-card__header">
+                <span className="preset-card__label">
+                  <span className="preset-card__dot bg-slate-400" aria-hidden="true" />
+                  New Customer
+                </span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Blank Form
+                </span>
+              </span>
+              <span className="preset-card__meta">Enter fresh customer details</span>
+            </button>
             {PRESETS.map((p) => {
               const isSelected = active === p.id;
               const outcome = OUTCOME[p.id];
@@ -397,7 +434,7 @@ export default function App() {
                   </p>
                 </div>
                 <span className="form-panel__profile-badge">
-                  {activePreset ? activePreset.label : "Custom"}
+                  {activePreset ? activePreset.label : active === null ? "New Customer" : "Custom"}
                 </span>
               </div>
 

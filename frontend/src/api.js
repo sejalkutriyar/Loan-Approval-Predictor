@@ -115,7 +115,8 @@ export function logout() {
 // ---------------------------------------------------------------------------
 export async function predict(applicant) {
   try {
-    return (await client.post("/predict", applicant)).data;
+    const { loan_duration_years, ...payload } = applicant;
+    return (await client.post("/predict", payload)).data;
   } catch (e) {
     throw new Error(errMsg(e));
   }
@@ -123,7 +124,8 @@ export async function predict(applicant) {
 
 export async function recourse(applicant) {
   try {
-    return (await client.post("/recourse", applicant)).data;
+    const { loan_duration_years, ...payload } = applicant;
+    return (await client.post("/recourse", payload)).data;
   } catch (e) {
     throw new Error(errMsg(e));
   }

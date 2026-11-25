@@ -92,6 +92,7 @@ export const LABELS = {
 
 export const PRIMARY_KEYS = [
   "AMT_CREDIT",
+  "loan_duration_years",
   "AMT_ANNUITY",
   "AMT_GOODS_PRICE",
   "AMT_INCOME_TOTAL",
@@ -103,6 +104,24 @@ export const PRIMARY_KEYS = [
   "NAME_HOUSING_TYPE",
   "DAYS_BIRTH",
 ];
+
+// Standard Banking Reducing-Balance EMI Calculation
+// Monthly rate r = (annualRate / 12) / 100
+// Months n = years * 12
+// Monthly EMI = [P * r * (1+r)^n] / [(1+r)^n - 1]
+// Annual Annuity = Monthly EMI * 12
+export function calculateAnnualEMI(principal, years, annualRate = 9.5) {
+  if (!Number.isFinite(principal) || !Number.isFinite(years) || principal <= 0 || years <= 0) {
+    return NaN;
+  }
+  const r = annualRate / 12 / 100;
+  const n = Math.round(years * 12);
+  if (n <= 0) return NaN;
+  const factor = Math.pow(1 + r, n);
+  if (!Number.isFinite(factor) || factor <= 1) return NaN;
+  const monthly = (principal * r * factor) / (factor - 1);
+  return Math.round(monthly * 12);
+}
 
 export const ENUMS = {
   NAME_CONTRACT_TYPE: ["Cash loans", "Revolving loans"],

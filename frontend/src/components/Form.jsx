@@ -20,6 +20,7 @@ import {
   label,
   inrCompact,
   getCreditScoreTier,
+  calculateAnnualEMI,
 } from "../fields.js";
 import "./form.css";
 
@@ -35,13 +36,20 @@ function SectionHeader({ icon: Icon, title, subtitle }) {
   );
 }
 
-function MoneyInput({ id, labelText, value, onChange }) {
-  const suffix = inrCompact(value);
+function MoneyInput({ id, labelText, value, onChange, placeholder = "0", formulaNote }) {
+  const suffix = Number.isFinite(value) && value > 0 ? inrCompact(value) : "";
   return (
     <div className="form-field">
-      <label className="form-label" htmlFor={id}>
-        {labelText}
-      </label>
+      <div className="form-label-row">
+        <label className="form-label" htmlFor={id}>
+          {labelText}
+        </label>
+        {formulaNote && (
+          <span className="form-hint text-[10.5px] font-medium text-brand/90" title={formulaNote}>
+            {formulaNote}
+          </span>
+        )}
+      </div>
       <div className="input-affix">
         <span className="input-affix__prefix" aria-hidden="true">
           ₹
@@ -52,8 +60,8 @@ function MoneyInput({ id, labelText, value, onChange }) {
           min={0}
           step="any"
           inputMode="numeric"
-          placeholder="0"
-          value={Number.isFinite(value) ? value : ""}
+          placeholder={placeholder}
+          value={Number.isFinite(value) && value > 0 ? value : ""}
           onChange={(e) => onChange(e.target.value === "" ? NaN : Number(e.target.value))}
           className={`form-input form-input--money${suffix ? " form-input--suffix" : ""}`}
         />
@@ -92,12 +100,15 @@ function SelectField({ id, labelText, value, onChange, options }) {
   );
 }
 
-function YearsField({ id, labelText, value, onChange, min, max, step = 1, placeholder }) {
+function YearsField({ id, labelText, value, onChange, min = 1, max = 50, step = 1, placeholder = "e.g. 15", hint }) {
   return (
     <div className="form-field">
-      <label className="form-label" htmlFor={id}>
-        {labelText}
-      </label>
+      <div className="form-label-row">
+        <label className="form-label" htmlFor={id}>
+          {labelText}
+        </label>
+        {hint && <span className="form-hint text-[10.5px] text-subtle">{hint}</span>}
+      </div>
       <div className="input-affix">
         <input
           id={id}
@@ -105,10 +116,10 @@ function YearsField({ id, labelText, value, onChange, min, max, step = 1, placeh
           min={min}
           max={max}
           step={step}
-          value={Number.isFinite(value) ? value : ""}
+          value={Number.isFinite(value) && value > 0 ? value : ""}
           onChange={(e) => {
-            const val = Number(e.target.value);
-            onChange(e.target.value === "" ? NaN : val);
+            const val = e.target.value === "" ? NaN : Number(e.target.value);
+            onChange(val);
           }}
           placeholder={placeholder}
           className="form-input form-input--suffix"
@@ -125,8 +136,10 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
   const [open, setOpen] = useState(false);
   const [bgFilter, setBgFilter] = useState("");
 
-  const ageYears = Math.round(Math.abs(applicant.DAYS_BIRTH) / 365);
-  const empYears = Number((Math.abs(applicant.DAYS_EMPLOYED) / 365).toFixed(1));
+  const ageYears = Number.isFinite(applicant.DAYS_BIRTH) ? Math.round(Math.abs(applicant.DAYS_BIRTH) / 365) : NaN;
+  const empYears = Number.isFinite(applicant.DAYS_EMPLOYED)
+    ? Number((Math.abs(applicant.DAYS_EMPLOYED) / 365).toFixed(1))
+    : NaN;
 
   const restKeys = Object.keys(applicant).filter((k) => !PRIMARY_KEYS.includes(k));
 
@@ -136,7 +149,38 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
   );
 
   const setYears = (key, years) =>
-    setField(key, Number.isFinite(years) ? Math.round(-years * 365) : NaN);
+    setField(key, Number.isFinite(years) && years >= 0 ? Math.round(-years * 365) : NaN);
+
+  // Auto-calculate Annual EMI when Credit or Duration changes
+  const handleCreditChange = (creditVal) => {
+    setField("AMT_CREDIT", creditVal);
+    if (
+      Number.isFinite(creditVal) &&
+      creditVal > 0 &&
+      Number.isFinite(applicant.loan_duration_years) &&
+      applicant.loan_duration_years > 0
+    ) {
+      const emi = calculateAnnualEMI(creditVal, applicant.loan_duration_years);
+      if (Number.isFinite(emi)) {
+        setField("AMT_ANNUITY", emi);
+      }
+    }
+  };
+
+  const handleDurationChange = (yearsVal) => {
+    setField("loan_duration_years", yearsVal);
+    if (
+      Number.isFinite(yearsVal) &&
+      yearsVal > 0 &&
+      Number.isFinite(applicant.AMT_CREDIT) &&
+      applicant.AMT_CREDIT > 0
+    ) {
+      const emi = calculateAnnualEMI(applicant.AMT_CREDIT, yearsVal);
+      if (Number.isFinite(emi)) {
+        setField("AMT_ANNUITY", emi);
+      }
+    }
+  };
 
   return (
     <form
@@ -150,24 +194,38 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
         <SectionHeader
           icon={CreditCard}
           title="Loan request"
-          subtitle="Amount requested, repayment instalment and asset value."
+          subtitle="Amount requested, repayment duration, auto-calculated EMI and asset value."
         />
-        <div className="form-grid-3">
+        <div className="form-grid-4">
           <MoneyInput
             id="amt-credit"
             labelText="Loan amount"
+            placeholder="e.g. 500000"
             value={applicant.AMT_CREDIT}
-            onChange={(v) => setField("AMT_CREDIT", v)}
+            onChange={handleCreditChange}
+          />
+          <YearsField
+            id="loan-duration"
+            labelText="Loan duration"
+            placeholder="e.g. 15"
+            min={1}
+            max={40}
+            step={1}
+            value={applicant.loan_duration_years}
+            onChange={handleDurationChange}
           />
           <MoneyInput
             id="amt-annuity"
             labelText="Annual EMI / annuity"
+            formulaNote="(Formula: [P × r × (1+r)ⁿ] / [(1+r)ⁿ - 1] · 9.5% p.a.)"
+            placeholder="Auto-calculated from years"
             value={applicant.AMT_ANNUITY}
             onChange={(v) => setField("AMT_ANNUITY", v)}
           />
           <MoneyInput
             id="amt-goods"
             labelText="Goods / asset price"
+            placeholder="e.g. 450000"
             value={applicant.AMT_GOODS_PRICE}
             onChange={(v) => setField("AMT_GOODS_PRICE", v)}
           />
@@ -184,19 +242,21 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
           <MoneyInput
             id="amt-income"
             labelText="Annual income"
+            placeholder="e.g. 300000"
             value={applicant.AMT_INCOME_TOTAL}
             onChange={(v) => setField("AMT_INCOME_TOTAL", v)}
           />
           <SelectField
             id="income-type"
             labelText="Income type"
-            value={applicant.NAME_INCOME_TYPE}
+            value={applicant.NAME_INCOME_TYPE || "Working"}
             onChange={(v) => setField("NAME_INCOME_TYPE", v)}
             options={INCOME_TYPES}
           />
           <YearsField
             id="work-years"
             labelText="Time in current job"
+            placeholder="e.g. 5"
             value={empYears}
             min={0}
             max={60}
@@ -217,8 +277,11 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
             { key: "EXT_SOURCE_2", name: "Bureau score 1", source: "CIBIL / Equifax" },
             { key: "EXT_SOURCE_3", name: "Bureau score 2", source: "Experian / CRIF" },
           ].map(({ key, name, source }) => {
-            const score = Number(applicant[key]) || 0;
-            const tier = getCreditScoreTier(score);
+            const hasScore = Number.isFinite(applicant[key]);
+            const score = hasScore ? Number(applicant[key]) : 0.50;
+            const tier = hasScore
+              ? getCreditScoreTier(score)
+              : { text: "Not set", color: "text-subtle bg-slate-100" };
             return (
               <div key={key} className="ext-score-card">
                 <div>
@@ -236,13 +299,13 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
                       min="0"
                       max="1"
                       step="0.01"
-                      value={score}
+                      value={hasScore ? score : 0.5}
                       aria-label={`${name} (${source})`}
                       onChange={(e) => setField(key, parseFloat(e.target.value))}
                       className="ext-score-card__range"
                     />
                     <div className="ext-score-card__value-box">
-                      <span className="ext-score-card__value">{score.toFixed(2)}</span>
+                      <span className="ext-score-card__value">{hasScore ? score.toFixed(2) : "—"}</span>
                     </div>
                   </div>
                   <div className="ext-score-card__scale" aria-hidden="true">
