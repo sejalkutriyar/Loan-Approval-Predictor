@@ -40,12 +40,12 @@ function MoneyInput({ id, labelText, value, onChange, placeholder = "0", formula
   const suffix = Number.isFinite(value) && value > 0 ? inrCompact(value) : "";
   return (
     <div className="form-field">
-      <div className="form-label-row">
+      <div className="form-label-row flex flex-wrap items-baseline justify-between gap-1">
         <label className="form-label" htmlFor={id}>
           {labelText}
         </label>
         {formulaNote && (
-          <span className="form-hint text-[10.5px] font-medium text-brand/90" title={formulaNote}>
+          <span className="text-[10.5px] font-medium text-brand/90 whitespace-nowrap" title={formulaNote}>
             {formulaNote}
           </span>
         )}
@@ -196,7 +196,7 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
           title="Loan request"
           subtitle="Amount requested, repayment duration, auto-calculated EMI and asset value."
         />
-        <div className="form-grid-4">
+        <div className="form-grid-2">
           <MoneyInput
             id="amt-credit"
             labelText="Loan amount"
