@@ -13,11 +13,11 @@
 
 ---
 
-## 📌 Executive Summary
+## Executive Summary
 
 **Loan Approval Predictor** is an enterprise AI decision-support platform designed for bank loan underwriting. Trained on the **Home Credit Default Risk** dataset (307,511 loan applications × 122 attributes), the system evaluates credit default risk, quantifies epistemic model uncertainty, explains individual decisions using Explainable AI (XAI), enforces real-world banking policy guardrails (FOIR / DTI limits), audits gender bias for regulatory compliance, and provides actionable counterfactual recourse for borderline or rejected borrowers.
 
-🌐 **Live Deployments:**
+**Live Deployments:**
 * **Frontend Application (Vercel):** [https://loan-approval-predictor-two.vercel.app/](https://loan-approval-predictor-two.vercel.app/)
 * **Backend API & Swagger Docs (Render):** [https://loan-approval-predictor-kk73.onrender.com/docs](https://loan-approval-predictor-kk73.onrender.com/docs)
 
@@ -25,7 +25,7 @@
 
 ## 🌟 Key Capabilities
 
-### 1. 🧠 Calibrated Neural Underwriting Engine
+### 1. Calibrated Neural Underwriting Engine
 * **PyTorch Deep Neural Network (ANN):** 171-dimensional input space $\rightarrow$ 128 $\rightarrow$ 64 $\rightarrow$ 32 $\rightarrow$ 1 output neuron with ReLU, BatchNorm, and Dropout.
 * **Platt Scaling:** Sigmoidal probability calibration trained via logistic regression, aligning raw model outputs with empirical default frequencies.
 * **Epistemic Uncertainty Estimation:** 50-pass Monte Carlo Dropout measures predictive variance ($\sigma$) to route ambiguous applicants to human credit officers.
@@ -34,7 +34,7 @@
   * $> 20\%$ Calibrated Risk: **Rejected**
   * $10\% - 20\%$ or $\sigma > 0.10$: **Needs Manual Review**
 
-### 2. 🛡️ Underwriting Policy Guardrails (FOIR / DTI Knockout)
+### 2. Underwriting Policy Guardrails (FOIR / DTI Knockout)
 * **Institutional Credit Guardrails:** Machine learning default predictions are audited against institutional underwriting rules to prevent over-leveraging low-income applicants.
 * **Fixed Obligation to Income Ratio (FOIR):**
   $$\text{FOIR} = \frac{\text{Annual EMI / Annuity}}{\text{Annual Income}}$$
@@ -48,18 +48,18 @@
 * **Automated Reducing-Balance EMI:** Real-time loan amortization based on custom tenure ($n = \text{years} \times 12$) and annual rate ($r = 9.5\%\text{ p.a.}$):
   $$\text{Monthly EMI} = \frac{P \cdot r \cdot (1+r)^n}{(1+r)^n - 1}$$
 
-### 4. 🔍 Explainable AI & Actionable Recourse
+### 4. Explainable AI & Actionable Recourse
 * **SHAP (KernelExplainer):** Identifies top contributing financial factors driving each decision (e.g. debt-to-income, annuity ratios, external bureau scores). Protected demographic attributes like gender are strictly excluded from reason codes.
 * **DiCE Counterfactual & Policy Recourse:** Generates practical, human-actionable strategies to move applicants into the approval zone:
   * **Tenure Extension:** Recommends extending loan duration (e.g. from 2 to 4 years) to bring FOIR within the safe $\le 50\%$ banking limit.
   * **Loan Downsizing:** Suggests safe maximum borrowing limits aligned with debt-servicing capacity.
 
-### 5. ⚖️ Responsible AI & Algorithmic Fairness Audit
+### 5. Responsible AI & Algorithmic Fairness Audit
 * **EEOC Four-Fifths (80%) Rule Compliance:** Evaluates Demographic Parity Ratio:
   $$\text{Disparate Impact Ratio} = \frac{P(\text{Approved} \mid \text{Female})}{P(\text{Approved} \mid \text{Male})}$$
 * Audited against Equal Credit Opportunity Act (ECOA) standards with a dedicated interactive audit modal in the UI.
 
-### 6. 🔐 Enterprise RBAC & Security
+### 6. Enterprise RBAC & Security
 * **JWT Authentication:** Signed access tokens using `PyJWT` (HS256) and `bcrypt` password hashing.
 * **Role-Based Access Control (RBAC):**
   * **Credit Officer:** Form intake, single and batch prediction, recourse guidance.
@@ -67,7 +67,7 @@
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```text
 ├── frontend/                   # Modern React 18 + Vite + Tailwind CSS Single-Page App
@@ -92,7 +92,7 @@
 
 ---
 
-## 📊 Model Evaluation & Benchmarks
+## Model Evaluation & Benchmarks
 
 | Metric | ANN (Production Model) | TabTransformer (Ablation) |
 |---|:---:|:---:|
@@ -105,7 +105,7 @@
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### Option 1: Run with Docker Compose (Recommended)
 
@@ -150,7 +150,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## 🔑 Demo Credentials
+## Demo Credentials
 
 Default accounts are seeded automatically on first startup:
 
@@ -161,7 +161,7 @@ Default accounts are seeded automatically on first startup:
 
 ---
 
-## 🧪 Running Automated Tests
+## Running Automated Tests
 
 Run the complete 43-test automated test suite:
 
@@ -170,7 +170,7 @@ python -m pytest -v
 ```
 
 ```text
-======================= 43 passed, 5 warnings in 7.27s =======================
+-- 43 passed, 5 warnings in 7.27s --
 ```
 
 * **`tests/test_preprocessing.py`**: Shape verification, null handling, categorical encoding.
@@ -189,6 +189,3 @@ python -m pytest -v
 * **DevOps & Cloud:** Docker, Nginx, Docker Compose, GitHub Actions, MongoDB Atlas
 
 ---
-
-## 📄 License
-This project is developed as part of an Advanced Data Science OJT track. Licensed under the MIT License.
