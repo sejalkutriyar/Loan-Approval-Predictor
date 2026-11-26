@@ -17,6 +17,7 @@ class CounterfactualChange(BaseModel):
 class Counterfactual(BaseModel):
     changes: List[CounterfactualChange]
     new_default_probability: float
+    description: Optional[str] = None
 
 
 class PredictionResponse(BaseModel):

@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Login from "./components/Login.jsx";
-import {
-  Building2,
-  ShieldCheck,
-  Scale,
-  LogOut,
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  BarChart3,
-  ClipboardList,
-} from "lucide-react";
+import {Building2, ShieldCheck, Scale, LogOut, AlertCircle, AlertTriangle, ArrowRight, BarChart3, ClipboardList} from "lucide-react";
 import { PRESETS, createEmptyApplicant } from "./presets.js";
 import {
   predict,
@@ -246,6 +236,17 @@ export default function App() {
     cf.changes.forEach((c) => {
       next[c.feature] = c.suggested;
     });
+
+    // If annuity changed, also sync loan_duration_years so UI tenure box updates cleanly
+    if (next.AMT_CREDIT > 0 && next.AMT_ANNUITY > 0) {
+      const r_m = 0.095 / 12;
+      const m = next.AMT_ANNUITY / 12;
+      if (m > next.AMT_CREDIT * r_m) {
+        const n_months = Math.log(m / (m - next.AMT_CREDIT * r_m)) / Math.log(1 + r_m);
+        next.loan_duration_years = Math.max(1, Math.round((n_months / 12) * 2) / 2);
+      }
+    }
+
     setApplicant(next);
     setActive("custom");
     setRec(null);

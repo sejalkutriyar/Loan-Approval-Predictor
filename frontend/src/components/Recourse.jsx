@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Lightbulb,
-  ArrowRight,
-  CheckCircle,
-  RefreshCw,
-} from "lucide-react";
+import {Lightbulb,ArrowRight, CheckCircle, RefreshCw} from "lucide-react";
 import { label, fmtValue, pct } from "../fields.js";
 import "./recourse.css";
 
@@ -60,6 +55,12 @@ export default function Recourse({ decision, data, loading, error, onRun, onAppl
                       New risk {pct(cf.new_default_probability)}
                     </span>
                   </div>
+
+                  {cf.description && (
+                    <div className="my-2.5 rounded-md border border-brand/20 bg-brand-soft/80 px-3 py-2 text-[11.5px] font-medium text-brand leading-relaxed">
+                      <strong>Practical Action:</strong> {cf.description}
+                    </div>
+                  )}
 
                   <div className="strategy-changes">
                     {cf.changes.map((c, j) => (

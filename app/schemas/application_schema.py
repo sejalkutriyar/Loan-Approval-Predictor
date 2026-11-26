@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 # Categorical Literals matching Home Credit dataset domain
@@ -65,7 +65,9 @@ WeekdayType = Literal[
 
 
 class ApplicantData(BaseModel):
-    # Core Loan Request
+    # Core Loan Request & Purpose
+    loan_purpose: Optional[str] = "Personal Loan"
+    loan_duration_years: Optional[float] = None
     NAME_CONTRACT_TYPE: ContractType
     CODE_GENDER: GenderType
     FLAG_OWN_CAR: BinaryFlag

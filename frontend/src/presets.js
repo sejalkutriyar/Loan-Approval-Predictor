@@ -4,13 +4,14 @@ import highRisk from "./presets/high_risk.json";
 
 // Full 71-field applicants. Expected results were measured on the real API.
 export const PRESETS = [
-  { id: "prime", label: "Prime (Good)", hint: "expect: Approved", data: { ...prime, loan_duration_years: 15 } },
-  { id: "borderline", label: "Average (Borderline)", hint: "expect: Manual Review", data: { ...borderline, loan_duration_years: 20 } },
-  { id: "high_risk", label: "High Risk (Poor)", hint: "expect: Rejected", data: { ...highRisk, loan_duration_years: 10 } },
+  { id: "prime", label: "Prime (Good)", hint: "expect: Approved", data: { ...prime, loan_purpose: "Home Loan", loan_duration_years: 15 } },
+  { id: "borderline", label: "Average (Borderline)", hint: "expect: Manual Review", data: { ...borderline, loan_purpose: "Car / Auto Loan", loan_duration_years: 20 } },
+  { id: "high_risk", label: "High Risk (Poor)", hint: "expect: Rejected", data: { ...highRisk, loan_purpose: "Personal Loan", loan_duration_years: 10 } },
 ];
 
 export const createEmptyApplicant = () => {
   const blank = JSON.parse(JSON.stringify(borderline));
+  blank.loan_purpose = "Personal Loan";
   blank.AMT_CREDIT = NaN;
   blank.loan_duration_years = NaN;
   blank.AMT_ANNUITY = NaN;

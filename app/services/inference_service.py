@@ -171,7 +171,16 @@ def recourse_applicant(applicant_data: dict) -> dict:
             target_annuity = round(income * 0.50, 2)  # Target safe 50% FOIR
             policy_cfs = []
 
-            # Strategy 1: Reduce Annual EMI (e.g. by extending loan tenure)
+            # Calculate required tenure to reach target_annuity at standard 9.5% p.a.
+            suggested_years = 4.5
+            if credit > 0 and target_annuity > 0:
+                r_m = 0.095 / 12
+                m = target_annuity / 12
+                if m > credit * r_m:
+                    n_months = np.log(m / (m - credit * r_m)) / np.log(1 + r_m)
+                    suggested_years = max(1.0, round(float(n_months) / 12, 1))
+
+            # Strategy 1: Reduce Annual EMI by extending tenure
             policy_cfs.append({
                 "changes": [
                     {
@@ -181,6 +190,10 @@ def recourse_applicant(applicant_data: dict) -> dict:
                     }
                 ],
                 "new_default_probability": round(min(calibrated_prob, 0.08), 4),
+                "description": (
+                    f"Extend loan tenure to ~{suggested_years} years to reduce Annual EMI to "
+                    f"₹{target_annuity:,.0f} (brings FOIR down to safe 50%)."
+                ),
             })
 
             # Strategy 2: Reduce Loan Amount & EMI proportionally
@@ -201,6 +214,10 @@ def recourse_applicant(applicant_data: dict) -> dict:
                         },
                     ],
                     "new_default_probability": round(min(calibrated_prob, 0.08), 4),
+                    "description": (
+                        f"Reduce loan request from ₹{credit:,.0f} to ₹{suggested_credit:,.0f} "
+                        f"so Annual EMI (₹{target_annuity:,.0f}) fits the customer's income capacity."
+                    ),
                 })
 
             counterfactuals = policy_cfs

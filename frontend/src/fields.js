@@ -91,6 +91,7 @@ export const LABELS = {
 };
 
 export const PRIMARY_KEYS = [
+  "loan_purpose",
   "AMT_CREDIT",
   "loan_duration_years",
   "AMT_ANNUITY",
@@ -104,6 +105,48 @@ export const PRIMARY_KEYS = [
   "NAME_HOUSING_TYPE",
   "DAYS_BIRTH",
 ];
+
+export const LOAN_PURPOSES = [
+  "Personal Loan",
+  "Home Loan",
+  "Car / Auto Loan",
+  "Education Loan",
+  "Business Loan",
+  "Consumer Durable Loan",
+];
+
+export const ASSET_CONFIG = {
+  "Car / Auto Loan": {
+    label: "Vehicle / car price",
+    placeholder: "e.g. 750000",
+    hint: "Estimated on-road price of the vehicle",
+  },
+  "Home Loan": {
+    label: "Property / home price",
+    placeholder: "e.g. 4500000",
+    hint: "Purchase or market value of the property",
+  },
+  "Education Loan": {
+    label: "Course / institute fee",
+    placeholder: "e.g. 1000000",
+    hint: "Total course tuition & academic fees",
+  },
+  "Business Loan": {
+    label: "Business asset / machinery value",
+    placeholder: "e.g. 1500000",
+    hint: "Value of machinery, equipment or stock",
+  },
+  "Personal Loan": {
+    label: "Goods / asset price",
+    placeholder: "e.g. 400000",
+    hint: "Value of underlying purchase or collateral",
+  },
+  "Consumer Durable Loan": {
+    label: "Appliance / electronics price",
+    placeholder: "e.g. 60000",
+    hint: "Invoice price of electronics / appliance",
+  },
+};
 
 // Standard Banking Reducing-Balance EMI Calculation
 // Monthly rate r = (annualRate / 12) / 100

@@ -21,6 +21,8 @@ import {
   inrCompact,
   getCreditScoreTier,
   calculateAnnualEMI,
+  LOAN_PURPOSES,
+  ASSET_CONFIG,
 } from "../fields.js";
 import "./form.css";
 
@@ -182,6 +184,8 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
     }
   };
 
+  const assetCfg = ASSET_CONFIG[applicant.loan_purpose] || ASSET_CONFIG["Personal Loan"];
+
   return (
     <form
       onSubmit={(e) => {
@@ -194,9 +198,24 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
         <SectionHeader
           icon={CreditCard}
           title="Loan request"
-          subtitle="Amount requested, repayment duration, auto-calculated EMI and asset value."
+          subtitle="Loan purpose, amount requested, duration, auto-calculated EMI and asset value."
         />
         <div className="form-grid-2">
+          <SelectField
+            id="loan-purpose"
+            labelText="Loan purpose / category"
+            value={applicant.loan_purpose || "Personal Loan"}
+            onChange={(v) => setField("loan_purpose", v)}
+            options={LOAN_PURPOSES}
+          />
+          <MoneyInput
+            id="amt-goods"
+            labelText={assetCfg.label}
+            placeholder={assetCfg.placeholder}
+            formulaNote={assetCfg.hint}
+            value={applicant.AMT_GOODS_PRICE}
+            onChange={(v) => setField("AMT_GOODS_PRICE", v)}
+          />
           <MoneyInput
             id="amt-credit"
             labelText="Loan amount"
@@ -214,21 +233,16 @@ export default function Form({ applicant, setField, onSubmit, loading }) {
             value={applicant.loan_duration_years}
             onChange={handleDurationChange}
           />
-          <MoneyInput
-            id="amt-annuity"
-            labelText="Annual EMI / annuity"
-            formulaNote="(Formula: [P × r × (1+r)ⁿ] / [(1+r)ⁿ - 1] · 9.5% p.a.)"
-            placeholder="Auto-calculated from years"
-            value={applicant.AMT_ANNUITY}
-            onChange={(v) => setField("AMT_ANNUITY", v)}
-          />
-          <MoneyInput
-            id="amt-goods"
-            labelText="Goods / asset price"
-            placeholder="e.g. 450000"
-            value={applicant.AMT_GOODS_PRICE}
-            onChange={(v) => setField("AMT_GOODS_PRICE", v)}
-          />
+          <div className="sm:col-span-2">
+            <MoneyInput
+              id="amt-annuity"
+              labelText="Annual EMI / annuity"
+              formulaNote="(Formula: [P × r × (1+r)ⁿ] / [(1+r)ⁿ - 1] · 9.5% p.a.)"
+              placeholder="Auto-calculated from years"
+              value={applicant.AMT_ANNUITY}
+              onChange={(v) => setField("AMT_ANNUITY", v)}
+            />
+          </div>
         </div>
       </section>
 
