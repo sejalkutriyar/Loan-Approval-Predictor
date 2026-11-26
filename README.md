@@ -2,6 +2,8 @@
 ### Production-Grade AI Decision-Support System for Loan Underwriting
 
 [![CI](https://github.com/sejalkutriyar/Loan-Approval-Predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/sejalkutriyar/Loan-Approval-Predictor/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?logo=vercel&logoColor=white)](https://loan-approval-predictor-two.vercel.app/)
+[![API Backend](https://img.shields.io/badge/API%20Backend-Render-46E3B7?logo=render&logoColor=black)](https://loan-approval-predictor-kk73.onrender.com/)
 [![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.14-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Production%20API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -13,7 +15,11 @@
 
 ## 📌 Executive Summary
 
-**Loan Approval Predictor** is an enterprise AI decision-support platform designed for bank loan underwriting. Trained on the **Home Credit Default Risk** dataset (307,511 loan applications × 122 attributes), the system evaluates credit default risk, quantifies epistemic model uncertainty, explains individual decisions using Explainable AI (XAI), audits gender bias for regulatory compliance, and provides actionable counterfactual recourse for borderline or rejected borrowers.
+**Loan Approval Predictor** is an enterprise AI decision-support platform designed for bank loan underwriting. Trained on the **Home Credit Default Risk** dataset (307,511 loan applications × 122 attributes), the system evaluates credit default risk, quantifies epistemic model uncertainty, explains individual decisions using Explainable AI (XAI), enforces real-world banking policy guardrails (FOIR / DTI limits), audits gender bias for regulatory compliance, and provides actionable counterfactual recourse for borderline or rejected borrowers.
+
+🌐 **Live Deployments:**
+* **Frontend Application (Vercel):** [https://loan-approval-predictor-two.vercel.app/](https://loan-approval-predictor-two.vercel.app/)
+* **Backend API & Swagger Docs (Render):** [https://loan-approval-predictor-kk73.onrender.com/docs](https://loan-approval-predictor-kk73.onrender.com/docs)
 
 ---
 
@@ -28,16 +34,32 @@
   * $> 20\%$ Calibrated Risk: **Rejected**
   * $10\% - 20\%$ or $\sigma > 0.10$: **Needs Manual Review**
 
-### 2. 🔍 Explainable AI & Actionable Recourse
-* **SHAP (KernelExplainer):** Identifies top contributing financial factors driving each decision (e.g. debt-to-income, annuity ratios, external bureau scores). Protected demographic attributes like gender are strictly excluded from reason codes.
-* **DiCE Counterfactual Recourse:** Solves an optimization problem to generate actionable changes (e.g. lowering requested loan amount or improving bureau score) that move a declined applicant into the approval region.
+### 2. 🛡️ Underwriting Policy Guardrails (FOIR / DTI Knockout)
+* **Institutional Credit Guardrails:** Machine learning default predictions are audited against institutional underwriting rules to prevent over-leveraging low-income applicants.
+* **Fixed Obligation to Income Ratio (FOIR):**
+  $$\text{FOIR} = \frac{\text{Annual EMI / Annuity}}{\text{Annual Income}}$$
+* **Policy Hard Knockout Rules:**
+  * **$\text{FOIR} > 100\%$:** Automatic **Rejection** (*"Underwriting Policy Knockout: Annual EMI exceeds 100% of annual income"*), superseding raw bureau credit scores.
+  * **$\text{FOIR} \in [60\%, 100\%]$:** Routed to **Needs Manual Review** (*"Underwriting Policy Review: Annual EMI consumes >60% of income"*).
 
-### 3. ⚖️ Responsible AI & Algorithmic Fairness Audit
+### 3. 💼 Purpose-Driven Loan Structuring & Reducing-Balance EMI
+* **Categorical Loan Types:** Supports Car / Auto Loans, Home Loans, Education Loans, Business Loans, Consumer Durable Loans, and Personal Loans.
+* **Dynamic Asset Valuation:** Asset price label, placeholder, and hint dynamically transform based on category (e.g., *Vehicle / car price* for auto loans, *Property / home price* for mortgages, *Course / institute fee* for education loans).
+* **Automated Reducing-Balance EMI:** Real-time loan amortization based on custom tenure ($n = \text{years} \times 12$) and annual rate ($r = 9.5\%\text{ p.a.}$):
+  $$\text{Monthly EMI} = \frac{P \cdot r \cdot (1+r)^n}{(1+r)^n - 1}$$
+
+### 4. 🔍 Explainable AI & Actionable Recourse
+* **SHAP (KernelExplainer):** Identifies top contributing financial factors driving each decision (e.g. debt-to-income, annuity ratios, external bureau scores). Protected demographic attributes like gender are strictly excluded from reason codes.
+* **DiCE Counterfactual & Policy Recourse:** Generates practical, human-actionable strategies to move applicants into the approval zone:
+  * **Tenure Extension:** Recommends extending loan duration (e.g. from 2 to 4 years) to bring FOIR within the safe $\le 50\%$ banking limit.
+  * **Loan Downsizing:** Suggests safe maximum borrowing limits aligned with debt-servicing capacity.
+
+### 5. ⚖️ Responsible AI & Algorithmic Fairness Audit
 * **EEOC Four-Fifths (80%) Rule Compliance:** Evaluates Demographic Parity Ratio:
   $$\text{Disparate Impact Ratio} = \frac{P(\text{Approved} \mid \text{Female})}{P(\text{Approved} \mid \text{Male})}$$
 * Audited against Equal Credit Opportunity Act (ECOA) standards with a dedicated interactive audit modal in the UI.
 
-### 4. 🔐 Enterprise RBAC & Security
+### 6. 🔐 Enterprise RBAC & Security
 * **JWT Authentication:** Signed access tokens using `PyJWT` (HS256) and `bcrypt` password hashing.
 * **Role-Based Access Control (RBAC):**
   * **Credit Officer:** Form intake, single and batch prediction, recourse guidance.
