@@ -181,7 +181,7 @@ python -m pytest -v
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Machine Learning & XAI:** PyTorch, scikit-learn, SHAP, DiCE-ML, NumPy, Pandas
 * **Backend API:** FastAPI, Uvicorn, Pydantic v2, PyJWT, bcrypt, Motor, PyMongo
